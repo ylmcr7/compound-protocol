@@ -4,19 +4,19 @@ import "../../contracts/Comptroller.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
-  function getCompAddress() public view returns (address) {
+  function getSashimiAddress() public view returns (address) {
     return 0x61460874a7196d6a22D1eE4922473664b3E95270;
   }
 }
 
 contract ComptrollerRopsten is Comptroller {
-  function getCompAddress() public view returns (address) {
+  function getSashimiAddress() public view returns (address) {
     return 0x1Fe16De955718CFAb7A44605458AB023838C2793;
   }
 }
 
 contract ComptrollerHarness is Comptroller {
-    address compAddress;
+    address sashimiAddress;
     uint public blockNumber;
 
     constructor() Comptroller() public {}
@@ -25,58 +25,58 @@ contract ComptrollerHarness is Comptroller {
         pauseGuardian = harnessedPauseGuardian;
     }
 
-    function setCompSupplyState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compSupplyState[cToken].index = index;
-        compSupplyState[cToken].block = blockNumber_;
+    function setSashimiSupplyState(address cToken, uint224 index, uint32 blockNumber_) public {
+        sashimiSupplyState[cToken].index = index;
+        sashimiSupplyState[cToken].block = blockNumber_;
     }
 
-    function setCompBorrowState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compBorrowState[cToken].index = index;
-        compBorrowState[cToken].block = blockNumber_;
+    function setSashimiBorrowState(address cToken, uint224 index, uint32 blockNumber_) public {
+        sashimiBorrowState[cToken].index = index;
+        sashimiBorrowState[cToken].block = blockNumber_;
     }
 
-    function setCompAccrued(address user, uint userAccrued) public {
-        compAccrued[user] = userAccrued;
+    function setSashimiAccrued(address user, uint userAccrued) public {
+        sashimiAccrued[user] = userAccrued;
     }
 
-    function setCompAddress(address compAddress_) public {
-        compAddress = compAddress_;
+    function setSashimiAddress(address sashimiAddress_) public {
+        sashimiAddress = sashimiAddress_;
     }
 
-    function getCompAddress() public view returns (address) {
-        return compAddress;
+    function getSashimiAddress() public view returns (address) {
+        return sashimiAddress;
     }
 
-    function setCompSpeed(address cToken, uint compSpeed) public {
-        compSpeeds[cToken] = compSpeed;
+    function setSashimiSpeed(address cToken, uint sashimiSpeed) public {
+        sashimiSpeeds[cToken] = sashimiSpeed;
     }
 
-    function setCompBorrowerIndex(address cToken, address borrower, uint index) public {
-        compBorrowerIndex[cToken][borrower] = index;
+    function setSashimiBorrowerIndex(address cToken, address borrower, uint index) public {
+        sashimiBorrowerIndex[cToken][borrower] = index;
     }
 
-    function setCompSupplierIndex(address cToken, address supplier, uint index) public {
-        compSupplierIndex[cToken][supplier] = index;
+    function setSashimiSupplierIndex(address cToken, address supplier, uint index) public {
+        sashimiSupplierIndex[cToken][supplier] = index;
     }
 
-    function harnessUpdateCompBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
-        updateCompBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
+    function harnessUpdateSashimiBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
+        updateSashimiBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
     }
 
-    function harnessUpdateCompSupplyIndex(address cToken) public {
-        updateCompSupplyIndex(cToken);
+    function harnessUpdateSashimiSupplyIndex(address cToken) public {
+        updateSashimiSupplyIndex(cToken);
     }
 
-    function harnessDistributeBorrowerComp(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
-        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
+    function harnessDistributeBorrowerSashimi(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
+        distributeBorrowerSashimi(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
     }
 
-    function harnessDistributeSupplierComp(address cToken, address supplier) public {
-        distributeSupplierComp(cToken, supplier, false);
+    function harnessDistributeSupplierSashimi(address cToken, address supplier) public {
+        distributeSupplierSashimi(cToken, supplier, false);
     }
 
-    function harnessTransferComp(address user, uint userAccrued, uint threshold) public returns (uint) {
-        return transferComp(user, userAccrued, threshold);
+    function harnessTransferSashimi(address user, uint userAccrued, uint threshold) public returns (uint) {
+        return transferSashimi(user, userAccrued, threshold);
     }
 
     function harnessFastForward(uint blocks) public returns (uint) {
@@ -92,23 +92,23 @@ contract ComptrollerHarness is Comptroller {
         return blockNumber;
     }
 
-    function getCompMarkets() public view returns (address[] memory) {
+    function getSashimiMarkets() public view returns (address[] memory) {
         uint m = allMarkets.length;
         uint n = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
+            if (markets[address(allMarkets[i])].isSashimied) {
                 n++;
             }
         }
 
-        address[] memory compMarkets = new address[](n);
+        address[] memory sashimiMarkets = new address[](n);
         uint k = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
-                compMarkets[k++] = address(allMarkets[i]);
+            if (markets[address(allMarkets[i])].isSashimied) {
+                sashimiMarkets[k++] = address(allMarkets[i]);
             }
         }
-        return compMarkets;
+        return sashimiMarkets;
     }
 }
 

@@ -69,8 +69,8 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
         /// @notice Per-market mapping of "accounts in this asset"
         mapping(address => bool) accountMembership;
 
-        /// @notice Whether or not this market receives COMP
-        bool isComped;
+        /// @notice Whether or not this market receives SASHIMI
+        bool isSashimied;
     }
 
     /**
@@ -95,8 +95,8 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
 }
 
 contract ComptrollerV3Storage is ComptrollerV2Storage {
-    struct CompMarketState {
-        /// @notice The market's last updated compBorrowIndex or compSupplyIndex
+    struct SashimiMarketState {
+        /// @notice The market's last updated sashimiBorrowIndex or sashimiSupplyIndex
         uint224 index;
 
         /// @notice The block number the index was last updated at
@@ -106,26 +106,26 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     /// @notice A list of all markets
     CToken[] public allMarkets;
 
-    /// @notice The rate at which the flywheel distributes COMP, per block
-    uint public compRate;
+    /// @notice The rate at which the flywheel distributes SASHIMI, per block
+    uint public sashimiRate;
 
-    /// @notice The portion of compRate that each market currently receives
-    mapping(address => uint) public compSpeeds;
+    /// @notice The portion of sashimiRate that each market currently receives
+    mapping(address => uint) public sashimiSpeeds;
 
-    /// @notice The COMP market supply state for each market
-    mapping(address => CompMarketState) public compSupplyState;
+    /// @notice The SASHIMI market supply state for each market
+    mapping(address => SashimiMarketState) public sashimiSupplyState;
 
-    /// @notice The COMP market borrow state for each market
-    mapping(address => CompMarketState) public compBorrowState;
+    /// @notice The SASHIMI market borrow state for each market
+    mapping(address => SashimiMarketState) public sashimiBorrowState;
 
-    /// @notice The COMP borrow index for each market for each supplier as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compSupplierIndex;
+    /// @notice The SASHIMI borrow index for each market for each supplier as of the last time they accrued SASHIMI
+    mapping(address => mapping(address => uint)) public sashimiSupplierIndex;
 
-    /// @notice The COMP borrow index for each market for each borrower as of the last time they accrued COMP
-    mapping(address => mapping(address => uint)) public compBorrowerIndex;
+    /// @notice The SASHIMI borrow index for each market for each borrower as of the last time they accrued SASHIMI
+    mapping(address => mapping(address => uint)) public sashimiBorrowerIndex;
 
-    /// @notice The COMP accrued but not yet transferred to each user
-    mapping(address => uint) public compAccrued;
+    /// @notice The SASHIMI accrued but not yet transferred to each user
+    mapping(address => uint) public sashimiAccrued;
 }
 
 contract ComptrollerV4Storage is ComptrollerV3Storage {

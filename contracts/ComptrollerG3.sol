@@ -7,7 +7,7 @@ import "./PriceOracle.sol";
 import "./ComptrollerInterface.sol";
 import "./ComptrollerStorage.sol";
 import "./Unitroller.sol";
-import "./Governance/Comp.sol";
+import "./EIP20Interface.sol";
 
 /**
  * @title Compound's Comptroller Contract
@@ -47,26 +47,26 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
     /// @notice Emitted when an action is paused on a market
     event ActionPaused(CToken cToken, string action, bool pauseState);
 
-    /// @notice Emitted when market comped status is changed
-    event MarketComped(CToken cToken, bool isComped);
+    /// @notice Emitted when market sashimied status is changed
+    event MarketSashimied(CToken cToken, bool isSashimied);
 
-    /// @notice Emitted when COMP rate is changed
-    event NewCompRate(uint oldCompRate, uint newCompRate);
+    /// @notice Emitted when SASHIMI rate is changed
+    event NewSashimiRate(uint oldSashimiRate, uint newSashimiRate);
 
-    /// @notice Emitted when a new COMP speed is calculated for a market
-    event CompSpeedUpdated(CToken indexed cToken, uint newSpeed);
+    /// @notice Emitted when a new SASHIMI speed is calculated for a market
+    event SashimiSpeedUpdated(CToken indexed cToken, uint newSpeed);
 
-    /// @notice Emitted when COMP is distributed to a supplier
-    event DistributedSupplierComp(CToken indexed cToken, address indexed supplier, uint compDelta, uint compSupplyIndex);
+    /// @notice Emitted when SASHIMI is distributed to a supplier
+    event DistributedSupplierSashimi(CToken indexed cToken, address indexed supplier, uint sashimiDelta, uint sashimiSupplyIndex);
 
-    /// @notice Emitted when COMP is distributed to a borrower
-    event DistributedBorrowerComp(CToken indexed cToken, address indexed borrower, uint compDelta, uint compBorrowIndex);
+    /// @notice Emitted when SASHIMI is distributed to a borrower
+    event DistributedBorrowerSashimi(CToken indexed cToken, address indexed borrower, uint sashimiDelta, uint sashimiBorrowIndex);
 
-    /// @notice The threshold above which the flywheel transfers COMP, in wei
-    uint public constant compClaimThreshold = 0.001e18;
+    /// @notice The threshold above which the flywheel transfers SASHIMI, in wei
+    uint public constant sashimiClaimThreshold = 0.001e18;
 
-    /// @notice The initial COMP index for a market
-    uint224 public constant compInitialIndex = 1e36;
+    /// @notice The initial SASHIMI index for a market
+    uint224 public constant sashimiInitialIndex = 1e36;
 
     // closeFactorMantissa must be strictly greater than this value
     uint internal constant closeFactorMinMantissa = 0.05e18; // 0.05
@@ -246,8 +246,8 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         }
 
         // Keep the flywheel moving
-        updateCompSupplyIndex(cToken);
-        distributeSupplierComp(cToken, minter, false);
+        updateSashimiSupplyIndex(cToken);
+        distributeSupplierSashimi(cToken, minter, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -286,8 +286,8 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         }
 
         // Keep the flywheel moving
-        updateCompSupplyIndex(cToken);
-        distributeSupplierComp(cToken, redeemer, false);
+        updateSashimiSupplyIndex(cToken);
+        distributeSupplierSashimi(cToken, redeemer, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -375,8 +375,8 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
 
         // Keep the flywheel moving
         Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
-        updateCompBorrowIndex(cToken, borrowIndex);
-        distributeBorrowerComp(cToken, borrower, borrowIndex, false);
+        updateSashimiBorrowIndex(cToken, borrowIndex);
+        distributeBorrowerSashimi(cToken, borrower, borrowIndex, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -423,8 +423,8 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
 
         // Keep the flywheel moving
         Exp memory borrowIndex = Exp({mantissa: CToken(cToken).borrowIndex()});
-        updateCompBorrowIndex(cToken, borrowIndex);
-        distributeBorrowerComp(cToken, borrower, borrowIndex, false);
+        updateSashimiBorrowIndex(cToken, borrowIndex);
+        distributeBorrowerSashimi(cToken, borrower, borrowIndex, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -556,9 +556,9 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         }
 
         // Keep the flywheel moving
-        updateCompSupplyIndex(cTokenCollateral);
-        distributeSupplierComp(cTokenCollateral, borrower, false);
-        distributeSupplierComp(cTokenCollateral, liquidator, false);
+        updateSashimiSupplyIndex(cTokenCollateral);
+        distributeSupplierSashimi(cTokenCollateral, borrower, false);
+        distributeSupplierSashimi(cTokenCollateral, liquidator, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -610,9 +610,9 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         }
 
         // Keep the flywheel moving
-        updateCompSupplyIndex(cToken);
-        distributeSupplierComp(cToken, src, false);
-        distributeSupplierComp(cToken, dst, false);
+        updateSashimiSupplyIndex(cToken);
+        distributeSupplierSashimi(cToken, src, false);
+        distributeSupplierSashimi(cToken, dst, false);
 
         return uint(Error.NO_ERROR);
     }
@@ -1005,7 +1005,7 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
 
         cToken.isCToken(); // Sanity check to make sure its really a CToken
 
-        markets[address(cToken)] = Market({isListed: true, isComped: false, collateralFactorMantissa: 0});
+        markets[address(cToken)] = Market({isListed: true, isSashimied: false, collateralFactorMantissa: 0});
 
         _addMarketInternal(address(cToken));
 
@@ -1081,26 +1081,26 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         return state;
     }
 
-    function _become(Unitroller unitroller, uint compRate_, address[] memory compMarketsToAdd, address[] memory otherMarketsToAdd) public {
+    function _become(Unitroller unitroller, uint sashimiRate_, address[] memory sashimiMarketsToAdd, address[] memory otherMarketsToAdd) public {
         require(msg.sender == unitroller.admin(), "only unitroller admin can change brains");
         require(unitroller._acceptImplementation() == 0, "change not authorized");
 
-        ComptrollerG3(address(unitroller))._becomeG3(compRate_, compMarketsToAdd, otherMarketsToAdd);
+        ComptrollerG3(address(unitroller))._becomeG3(sashimiRate_, sashimiMarketsToAdd, otherMarketsToAdd);
     }
 
-    function _becomeG3(uint compRate_, address[] memory compMarketsToAdd, address[] memory otherMarketsToAdd) public {
+    function _becomeG3(uint sashimiRate_, address[] memory sashimiMarketsToAdd, address[] memory otherMarketsToAdd) public {
         require(msg.sender == comptrollerImplementation, "only brains can become itself");
 
-        for (uint i = 0; i < compMarketsToAdd.length; i++) {
-            _addMarketInternal(address(compMarketsToAdd[i]));
+        for (uint i = 0; i < sashimiMarketsToAdd.length; i++) {
+            _addMarketInternal(address(sashimiMarketsToAdd[i]));
         }
 
         for (uint i = 0; i < otherMarketsToAdd.length; i++) {
             _addMarketInternal(address(otherMarketsToAdd[i]));
         }
 
-        _setCompRate(compRate_);
-        _addCompMarkets(compMarketsToAdd);
+        _setSashimiRate(sashimiRate_);
+        _addSashimiMarkets(sashimiMarketsToAdd);
     }
 
     /**
@@ -1110,26 +1110,26 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
         return msg.sender == admin || msg.sender == comptrollerImplementation;
     }
 
-    /*** Comp Distribution ***/
+    /*** Sashimi Distribution ***/
 
     /**
-     * @notice Recalculate and update COMP speeds for all COMP markets
+     * @notice Recalculate and update SASHIMI speeds for all SASHIMI markets
      */
-    function refreshCompSpeeds() public {
+    function refreshSashimiSpeeds() public {
         CToken[] memory allMarkets_ = allMarkets;
 
         for (uint i = 0; i < allMarkets_.length; i++) {
             CToken cToken = allMarkets_[i];
             Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
-            updateCompSupplyIndex(address(cToken));
-            updateCompBorrowIndex(address(cToken), borrowIndex);
+            updateSashimiSupplyIndex(address(cToken));
+            updateSashimiBorrowIndex(address(cToken), borrowIndex);
         }
 
         Exp memory totalUtility = Exp({mantissa: 0});
         Exp[] memory utilities = new Exp[](allMarkets_.length);
         for (uint i = 0; i < allMarkets_.length; i++) {
             CToken cToken = allMarkets_[i];
-            if (markets[address(cToken)].isComped) {
+            if (markets[address(cToken)].isSashimied) {
                 Exp memory assetPrice = Exp({mantissa: oracle.getUnderlyingPrice(cToken)});
                 Exp memory interestPerBlock = mul_(Exp({mantissa: cToken.borrowRatePerBlock()}), cToken.totalBorrows());
                 Exp memory utility = mul_(interestPerBlock, assetPrice);
@@ -1140,27 +1140,27 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
 
         for (uint i = 0; i < allMarkets_.length; i++) {
             CToken cToken = allMarkets[i];
-            uint newSpeed = totalUtility.mantissa > 0 ? mul_(compRate, div_(utilities[i], totalUtility)) : 0;
-            compSpeeds[address(cToken)] = newSpeed;
-            emit CompSpeedUpdated(cToken, newSpeed);
+            uint newSpeed = totalUtility.mantissa > 0 ? mul_(sashimiRate, div_(utilities[i], totalUtility)) : 0;
+            sashimiSpeeds[address(cToken)] = newSpeed;
+            emit SashimiSpeedUpdated(cToken, newSpeed);
         }
     }
 
     /**
-     * @notice Accrue COMP to the market by updating the supply index
+     * @notice Accrue SASHIMI to the market by updating the supply index
      * @param cToken The market whose supply index to update
      */
-    function updateCompSupplyIndex(address cToken) internal {
-        CompMarketState storage supplyState = compSupplyState[cToken];
-        uint supplySpeed = compSpeeds[cToken];
+    function updateSashimiSupplyIndex(address cToken) internal {
+        SashimiMarketState storage supplyState = sashimiSupplyState[cToken];
+        uint supplySpeed = sashimiSpeeds[cToken];
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(supplyState.block));
         if (deltaBlocks > 0 && supplySpeed > 0) {
             uint supplyTokens = CToken(cToken).totalSupply();
-            uint compAccrued = mul_(deltaBlocks, supplySpeed);
-            Double memory ratio = supplyTokens > 0 ? fraction(compAccrued, supplyTokens) : Double({mantissa: 0});
+            uint sashimiAccrued = mul_(deltaBlocks, supplySpeed);
+            Double memory ratio = supplyTokens > 0 ? fraction(sashimiAccrued, supplyTokens) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: supplyState.index}), ratio);
-            compSupplyState[cToken] = CompMarketState({
+            sashimiSupplyState[cToken] = SashimiMarketState({
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
                 block: safe32(blockNumber, "block number exceeds 32 bits")
             });
@@ -1170,20 +1170,20 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
     }
 
     /**
-     * @notice Accrue COMP to the market by updating the borrow index
+     * @notice Accrue SASHIMI to the market by updating the borrow index
      * @param cToken The market whose borrow index to update
      */
-    function updateCompBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
-        CompMarketState storage borrowState = compBorrowState[cToken];
-        uint borrowSpeed = compSpeeds[cToken];
+    function updateSashimiBorrowIndex(address cToken, Exp memory marketBorrowIndex) internal {
+        SashimiMarketState storage borrowState = sashimiBorrowState[cToken];
+        uint borrowSpeed = sashimiSpeeds[cToken];
         uint blockNumber = getBlockNumber();
         uint deltaBlocks = sub_(blockNumber, uint(borrowState.block));
         if (deltaBlocks > 0 && borrowSpeed > 0) {
             uint borrowAmount = div_(CToken(cToken).totalBorrows(), marketBorrowIndex);
-            uint compAccrued = mul_(deltaBlocks, borrowSpeed);
-            Double memory ratio = borrowAmount > 0 ? fraction(compAccrued, borrowAmount) : Double({mantissa: 0});
+            uint sashimiAccrued = mul_(deltaBlocks, borrowSpeed);
+            Double memory ratio = borrowAmount > 0 ? fraction(sashimiAccrued, borrowAmount) : Double({mantissa: 0});
             Double memory index = add_(Double({mantissa: borrowState.index}), ratio);
-            compBorrowState[cToken] = CompMarketState({
+            sashimiBorrowState[cToken] = SashimiMarketState({
                 index: safe224(index.mantissa, "new index exceeds 224 bits"),
                 block: safe32(blockNumber, "block number exceeds 32 bits")
             });
@@ -1193,63 +1193,63 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
     }
 
     /**
-     * @notice Calculate COMP accrued by a supplier and possibly transfer it to them
+     * @notice Calculate SASHIMI accrued by a supplier and possibly transfer it to them
      * @param cToken The market in which the supplier is interacting
-     * @param supplier The address of the supplier to distribute COMP to
+     * @param supplier The address of the supplier to distribute SASHIMI to
      */
-    function distributeSupplierComp(address cToken, address supplier, bool distributeAll) internal {
-        CompMarketState storage supplyState = compSupplyState[cToken];
+    function distributeSupplierSashimi(address cToken, address supplier, bool distributeAll) internal {
+        SashimiMarketState storage supplyState = sashimiSupplyState[cToken];
         Double memory supplyIndex = Double({mantissa: supplyState.index});
-        Double memory supplierIndex = Double({mantissa: compSupplierIndex[cToken][supplier]});
-        compSupplierIndex[cToken][supplier] = supplyIndex.mantissa;
+        Double memory supplierIndex = Double({mantissa: sashimiSupplierIndex[cToken][supplier]});
+        sashimiSupplierIndex[cToken][supplier] = supplyIndex.mantissa;
 
         if (supplierIndex.mantissa == 0 && supplyIndex.mantissa > 0) {
-            supplierIndex.mantissa = compInitialIndex;
+            supplierIndex.mantissa = sashimiInitialIndex;
         }
 
         Double memory deltaIndex = sub_(supplyIndex, supplierIndex);
         uint supplierTokens = CToken(cToken).balanceOf(supplier);
         uint supplierDelta = mul_(supplierTokens, deltaIndex);
-        uint supplierAccrued = add_(compAccrued[supplier], supplierDelta);
-        compAccrued[supplier] = transferComp(supplier, supplierAccrued, distributeAll ? 0 : compClaimThreshold);
-        emit DistributedSupplierComp(CToken(cToken), supplier, supplierDelta, supplyIndex.mantissa);
+        uint supplierAccrued = add_(sashimiAccrued[supplier], supplierDelta);
+        sashimiAccrued[supplier] = transferSashimi(supplier, supplierAccrued, distributeAll ? 0 : sashimiClaimThreshold);
+        emit DistributedSupplierSashimi(CToken(cToken), supplier, supplierDelta, supplyIndex.mantissa);
     }
 
     /**
-     * @notice Calculate COMP accrued by a borrower and possibly transfer it to them
+     * @notice Calculate SASHIMI accrued by a borrower and possibly transfer it to them
      * @dev Borrowers will not begin to accrue until after the first interaction with the protocol.
      * @param cToken The market in which the borrower is interacting
-     * @param borrower The address of the borrower to distribute COMP to
+     * @param borrower The address of the borrower to distribute SASHIMI to
      */
-    function distributeBorrowerComp(address cToken, address borrower, Exp memory marketBorrowIndex, bool distributeAll) internal {
-        CompMarketState storage borrowState = compBorrowState[cToken];
+    function distributeBorrowerSashimi(address cToken, address borrower, Exp memory marketBorrowIndex, bool distributeAll) internal {
+        SashimiMarketState storage borrowState = sashimiBorrowState[cToken];
         Double memory borrowIndex = Double({mantissa: borrowState.index});
-        Double memory borrowerIndex = Double({mantissa: compBorrowerIndex[cToken][borrower]});
-        compBorrowerIndex[cToken][borrower] = borrowIndex.mantissa;
+        Double memory borrowerIndex = Double({mantissa: sashimiBorrowerIndex[cToken][borrower]});
+        sashimiBorrowerIndex[cToken][borrower] = borrowIndex.mantissa;
 
         if (borrowerIndex.mantissa > 0) {
             Double memory deltaIndex = sub_(borrowIndex, borrowerIndex);
             uint borrowerAmount = div_(CToken(cToken).borrowBalanceStored(borrower), marketBorrowIndex);
             uint borrowerDelta = mul_(borrowerAmount, deltaIndex);
-            uint borrowerAccrued = add_(compAccrued[borrower], borrowerDelta);
-            compAccrued[borrower] = transferComp(borrower, borrowerAccrued, distributeAll ? 0 : compClaimThreshold);
-            emit DistributedBorrowerComp(CToken(cToken), borrower, borrowerDelta, borrowIndex.mantissa);
+            uint borrowerAccrued = add_(sashimiAccrued[borrower], borrowerDelta);
+            sashimiAccrued[borrower] = transferSashimi(borrower, borrowerAccrued, distributeAll ? 0 : sashimiClaimThreshold);
+            emit DistributedBorrowerSashimi(CToken(cToken), borrower, borrowerDelta, borrowIndex.mantissa);
         }
     }
 
     /**
-     * @notice Transfer COMP to the user, if they are above the threshold
-     * @dev Note: If there is not enough COMP, we do not perform the transfer all.
-     * @param user The address of the user to transfer COMP to
-     * @param userAccrued The amount of COMP to (possibly) transfer
-     * @return The amount of COMP which was NOT transferred to the user
+     * @notice Transfer SASHIMI to the user, if they are above the threshold
+     * @dev Note: If there is not enough SASHIMI, we do not perform the transfer all.
+     * @param user The address of the user to transfer SASHIMI to
+     * @param userAccrued The amount of SASHIMI to (possibly) transfer
+     * @return The amount of SASHIMI which was NOT transferred to the user
      */
-    function transferComp(address user, uint userAccrued, uint threshold) internal returns (uint) {
+    function transferSashimi(address user, uint userAccrued, uint threshold) internal returns (uint) {
         if (userAccrued >= threshold && userAccrued > 0) {
-            Comp comp = Comp(getCompAddress());
-            uint compRemaining = comp.balanceOf(address(this));
-            if (userAccrued <= compRemaining) {
-                comp.transfer(user, userAccrued);
+            EIP20Interface sashimi = EIP20Interface(getSashimiAddress());
+            uint sashimiRemaining = sashimi.balanceOf(address(this));
+            if (userAccrued <= sashimiRemaining) {
+                sashimi.transfer(user, userAccrued);
                 return 0;
             }
         }
@@ -1257,118 +1257,118 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
     }
 
     /**
-     * @notice Claim all the comp accrued by holder in all markets
-     * @param holder The address to claim COMP for
+     * @notice Claim all the sashimi accrued by holder in all markets
+     * @param holder The address to claim SASHIMI for
      */
-    function claimComp(address holder) public {
-        return claimComp(holder, allMarkets);
+    function claimSashimi(address holder) public {
+        return claimSashimi(holder, allMarkets);
     }
 
     /**
-     * @notice Claim all the comp accrued by holder in the specified markets
-     * @param holder The address to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
+     * @notice Claim all the sashimi accrued by holder in the specified markets
+     * @param holder The address to claim SASHIMI for
+     * @param cTokens The list of markets to claim SASHIMI in
      */
-    function claimComp(address holder, CToken[] memory cTokens) public {
+    function claimSashimi(address holder, CToken[] memory cTokens) public {
         address[] memory holders = new address[](1);
         holders[0] = holder;
-        claimComp(holders, cTokens, true, true);
+        claimSashimi(holders, cTokens, true, true);
     }
 
     /**
-     * @notice Claim all comp accrued by the holders
-     * @param holders The addresses to claim COMP for
-     * @param cTokens The list of markets to claim COMP in
-     * @param borrowers Whether or not to claim COMP earned by borrowing
-     * @param suppliers Whether or not to claim COMP earned by supplying
+     * @notice Claim all sashimi accrued by the holders
+     * @param holders The addresses to claim SASHIMI for
+     * @param cTokens The list of markets to claim SASHIMI in
+     * @param borrowers Whether or not to claim SASHIMI earned by borrowing
+     * @param suppliers Whether or not to claim SASHIMI earned by supplying
      */
-    function claimComp(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
+    function claimSashimi(address[] memory holders, CToken[] memory cTokens, bool borrowers, bool suppliers) public {
         for (uint i = 0; i < cTokens.length; i++) {
             CToken cToken = cTokens[i];
             require(markets[address(cToken)].isListed, "market must be listed");
             if (borrowers == true) {
                 Exp memory borrowIndex = Exp({mantissa: cToken.borrowIndex()});
-                updateCompBorrowIndex(address(cToken), borrowIndex);
+                updateSashimiBorrowIndex(address(cToken), borrowIndex);
                 for (uint j = 0; j < holders.length; j++) {
-                    distributeBorrowerComp(address(cToken), holders[j], borrowIndex, true);
+                    distributeBorrowerSashimi(address(cToken), holders[j], borrowIndex, true);
                 }
             }
             if (suppliers == true) {
-                updateCompSupplyIndex(address(cToken));
+                updateSashimiSupplyIndex(address(cToken));
                 for (uint j = 0; j < holders.length; j++) {
-                    distributeSupplierComp(address(cToken), holders[j], true);
+                    distributeSupplierSashimi(address(cToken), holders[j], true);
                 }
             }
         }
     }
 
-    /*** Comp Distribution Admin ***/
+    /*** Sashimi Distribution Admin ***/
 
     /**
-     * @notice Set the amount of COMP distributed per block
-     * @param compRate_ The amount of COMP wei per block to distribute
+     * @notice Set the amount of SASHIMI distributed per block
+     * @param sashimiRate_ The amount of SASHIMI wei per block to distribute
      */
-    function _setCompRate(uint compRate_) public {
-        require(adminOrInitializing(), "only admin can change comp rate");
+    function _setSashimiRate(uint sashimiRate_) public {
+        require(adminOrInitializing(), "only admin can change sashimi rate");
 
-        uint oldRate = compRate;
-        compRate = compRate_;
-        emit NewCompRate(oldRate, compRate_);
+        uint oldRate = sashimiRate;
+        sashimiRate = sashimiRate_;
+        emit NewSashimiRate(oldRate, sashimiRate_);
 
-        refreshCompSpeeds();
+        refreshSashimiSpeeds();
     }
 
     /**
-     * @notice Add markets to compMarkets, allowing them to earn COMP in the flywheel
+     * @notice Add markets to sashimiMarkets, allowing them to earn SASHIMI in the flywheel
      * @param cTokens The addresses of the markets to add
      */
-    function _addCompMarkets(address[] memory cTokens) public {
-        require(adminOrInitializing(), "only admin can add comp market");
+    function _addSashimiMarkets(address[] memory cTokens) public {
+        require(adminOrInitializing(), "only admin can add sashimi market");
 
         for (uint i = 0; i < cTokens.length; i++) {
-            _addCompMarketInternal(cTokens[i]);
+            _addSashimiMarketInternal(cTokens[i]);
         }
 
-        refreshCompSpeeds();
+        refreshSashimiSpeeds();
     }
 
-    function _addCompMarketInternal(address cToken) internal {
+    function _addSashimiMarketInternal(address cToken) internal {
         Market storage market = markets[cToken];
-        require(market.isListed == true, "comp market is not listed");
-        require(market.isComped == false, "comp market already added");
+        require(market.isListed == true, "sashimi market is not listed");
+        require(market.isSashimied == false, "sashimi market already added");
 
-        market.isComped = true;
-        emit MarketComped(CToken(cToken), true);
+        market.isSashimied = true;
+        emit MarketSashimied(CToken(cToken), true);
 
-        if (compSupplyState[cToken].index == 0 && compSupplyState[cToken].block == 0) {
-            compSupplyState[cToken] = CompMarketState({
-                index: compInitialIndex,
+        if (sashimiSupplyState[cToken].index == 0 && sashimiSupplyState[cToken].block == 0) {
+            sashimiSupplyState[cToken] = SashimiMarketState({
+                index: sashimiInitialIndex,
                 block: safe32(getBlockNumber(), "block number exceeds 32 bits")
             });
         }
 
-        if (compBorrowState[cToken].index == 0 && compBorrowState[cToken].block == 0) {
-            compBorrowState[cToken] = CompMarketState({
-                index: compInitialIndex,
+        if (sashimiBorrowState[cToken].index == 0 && sashimiBorrowState[cToken].block == 0) {
+            sashimiBorrowState[cToken] = SashimiMarketState({
+                index: sashimiInitialIndex,
                 block: safe32(getBlockNumber(), "block number exceeds 32 bits")
             });
         }
     }
 
     /**
-     * @notice Remove a market from compMarkets, preventing it from earning COMP in the flywheel
+     * @notice Remove a market from sashimiMarkets, preventing it from earning SASHIMI in the flywheel
      * @param cToken The address of the market to drop
      */
-    function _dropCompMarket(address cToken) public {
-        require(msg.sender == admin, "only admin can drop comp market");
+    function _dropSashimiMarket(address cToken) public {
+        require(msg.sender == admin, "only admin can drop sashimi market");
 
         Market storage market = markets[cToken];
-        require(market.isComped == true, "market is not a comp market");
+        require(market.isSashimied == true, "market is not a sashimi market");
 
-        market.isComped = false;
-        emit MarketComped(CToken(cToken), false);
+        market.isSashimied = false;
+        emit MarketSashimied(CToken(cToken), false);
 
-        refreshCompSpeeds();
+        refreshSashimiSpeeds();
     }
 
     /**
@@ -1385,10 +1385,10 @@ contract ComptrollerG3 is ComptrollerV3Storage, ComptrollerInterface, Comptrolle
     }
 
     /**
-     * @notice Return the address of the COMP token
-     * @return The address of COMP
+     * @notice Return the address of the SASHIMI token
+     * @return The address of SASHIMI
      */
-    function getCompAddress() public view returns (address) {
+    function getSashimiAddress() public view returns (address) {
         return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
     }
 }
