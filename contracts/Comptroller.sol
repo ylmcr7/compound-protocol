@@ -1430,6 +1430,6 @@ contract Comptroller is ComptrollerV4Storage, ComptrollerInterface, ComptrollerE
      * @return The address of SASHIMI
      */
     function getSashimiAddress() public view returns (address) {
-        return 0xc00e94Cb662C3520282E6f5717214004A7f26888;
+        return 0x4986843fde2b0dae6bDc54c8E16567614ea8786f;
     }
 }
