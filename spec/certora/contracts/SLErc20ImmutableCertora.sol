@@ -1,12 +1,12 @@
 pragma solidity ^0.5.16;
 
-import "../../../contracts/CErc20Delegator.sol";
+import "../../../contracts/SLErc20Immutable.sol";
 import "../../../contracts/EIP20Interface.sol";
 
-import "./CTokenCollateral.sol";
+import "./SLTokenCollateral.sol";
 
-contract CErc20DelegatorCertora is CErc20Delegator {
-    CTokenCollateral public otherToken;
+contract SLErc20ImmutableCertora is SLErc20Immutable {
+    SLTokenCollateral public otherToken;
 
     constructor(address underlying_,
                 ComptrollerInterface comptroller_,
@@ -15,11 +15,7 @@ contract CErc20DelegatorCertora is CErc20Delegator {
                 string memory name_,
                 string memory symbol_,
                 uint8 decimals_,
-                address payable admin_,
-                address implementation_,
-                bytes memory becomeImplementationData) public CErc20Delegator(underlying_, comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_, admin_, implementation_, becomeImplementationData) {
-        comptroller;       // touch for Certora slot deduction
-        interestRateModel; // touch for Certora slot deduction
+                address payable admin_) public SLErc20Immutable(underlying_, comptroller_, interestRateModel_, initialExchangeRateMantissa_, name_, symbol_, decimals_, admin_) {
     }
 
     function balanceOfInOther(address account) public view returns (uint) {
@@ -63,27 +59,25 @@ contract CErc20DelegatorCertora is CErc20Delegator {
     }
 
     function mintFreshPub(address minter, uint mintAmount) public returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_mintFreshPub(address,uint256)", minter, mintAmount));
-        return abi.decode(data, (uint));
+        (uint error,) = mintFresh(minter, mintAmount);
+        return error;
     }
 
     function redeemFreshPub(address payable redeemer, uint redeemTokens, uint redeemUnderlying) public returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_redeemFreshPub(address,uint256,uint256)", redeemer, redeemTokens, redeemUnderlying));
-        return abi.decode(data, (uint));
+        return redeemFresh(redeemer, redeemTokens, redeemUnderlying);
     }
 
     function borrowFreshPub(address payable borrower, uint borrowAmount) public returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_borrowFreshPub(address,uint256)", borrower, borrowAmount));
-        return abi.decode(data, (uint));
+        return borrowFresh(borrower, borrowAmount);
     }
 
     function repayBorrowFreshPub(address payer, address borrower, uint repayAmount) public returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_repayBorrowFreshPub(address,address,uint256)", payer, borrower, repayAmount));
-        return abi.decode(data, (uint));
+        (uint error,) = repayBorrowFresh(payer, borrower, repayAmount);
+        return error;
     }
 
     function liquidateBorrowFreshPub(address liquidator, address borrower, uint repayAmount) public returns (uint) {
-        bytes memory data = delegateToImplementation(abi.encodeWithSignature("_liquidateBorrowFreshPub(address,address,uint256)", liquidator, borrower, repayAmount));
-        return abi.decode(data, (uint));
+        (uint error,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, otherToken);
+        return error;
     }
 }

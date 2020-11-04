@@ -1,12 +1,12 @@
 pragma solidity ^0.5.16;
 
-import "../../contracts/CErc20Immutable.sol";
-import "../../contracts/CErc20Delegator.sol";
-import "../../contracts/CErc20Delegate.sol";
-import "../../contracts/CDaiDelegate.sol";
+import "../../contracts/SLErc20Immutable.sol";
+import "../../contracts/SLErc20Delegator.sol";
+import "../../contracts/SLErc20Delegate.sol";
+import "../../contracts/SLDaiDelegate.sol";
 import "./ComptrollerScenario.sol";
 
-contract CErc20Harness is CErc20Immutable {
+contract SLErc20Harness is SLErc20Immutable {
     uint blockNumber = 100000;
     uint harnessExchangeRate;
     bool harnessExchangeRateStored;
@@ -21,7 +21,7 @@ contract CErc20Harness is CErc20Immutable {
                 string memory symbol_,
                 uint8 decimals_,
                 address payable admin_)
-    CErc20Immutable(
+    SLErc20Immutable(
     underlying_,
     comptroller_,
     interestRateModel_,
@@ -99,8 +99,8 @@ contract CErc20Harness is CErc20Immutable {
         return err;
     }
 
-    function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+    function harnessRedeemFresh(address payable account, uint slTokenAmount, uint underlyingAmount) public returns (uint) {
+        return super.redeemFresh(account, slTokenAmount, underlyingAmount);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -125,8 +125,8 @@ contract CErc20Harness is CErc20Immutable {
         return err;
     }
 
-    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, SLToken slTokenCollateral) public returns (uint) {
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, slTokenCollateral);
         return err;
     }
 
@@ -151,7 +151,7 @@ contract CErc20Harness is CErc20Immutable {
     }
 }
 
-contract CErc20Scenario is CErc20Immutable {
+contract SLErc20Scenario is SLErc20Immutable {
     constructor(address underlying_,
                 ComptrollerInterface comptroller_,
                 InterestRateModel interestRateModel_,
@@ -160,7 +160,7 @@ contract CErc20Scenario is CErc20Immutable {
                 string memory symbol_,
                 uint8 decimals_,
                 address payable admin_)
-    CErc20Immutable(
+    SLErc20Immutable(
     underlying_,
     comptroller_,
     interestRateModel_,
@@ -184,7 +184,7 @@ contract CErc20Scenario is CErc20Immutable {
     }
 }
 
-contract CEvil is CErc20Scenario {
+contract SLEvil is SLErc20Scenario {
     constructor(address underlying_,
                 ComptrollerInterface comptroller_,
                 InterestRateModel interestRateModel_,
@@ -193,7 +193,7 @@ contract CEvil is CErc20Scenario {
                 string memory symbol_,
                 uint8 decimals_,
                 address payable admin_)
-    CErc20Scenario(
+    SLErc20Scenario(
     underlying_,
     comptroller_,
     interestRateModel_,
@@ -203,12 +203,12 @@ contract CEvil is CErc20Scenario {
     decimals_,
     admin_) public {}
 
-    function evilSeize(CToken treasure, address liquidator, address borrower, uint seizeTokens) public returns (uint) {
+    function evilSeize(SLToken treasure, address liquidator, address borrower, uint seizeTokens) public returns (uint) {
         return treasure.seize(liquidator, borrower, seizeTokens);
     }
 }
 
-contract CErc20DelegatorScenario is CErc20Delegator {
+contract SLErc20DelegatorScenario is SLErc20Delegator {
     constructor(address underlying_,
                 ComptrollerInterface comptroller_,
                 InterestRateModel interestRateModel_,
@@ -219,7 +219,7 @@ contract CErc20DelegatorScenario is CErc20Delegator {
                 address payable admin_,
                 address implementation_,
                 bytes memory becomeImplementationData)
-    CErc20Delegator(
+    SLErc20Delegator(
     underlying_,
     comptroller_,
     interestRateModel_,
@@ -240,7 +240,7 @@ contract CErc20DelegatorScenario is CErc20Delegator {
     }
 }
 
-contract CErc20DelegateHarness is CErc20Delegate {
+contract SLErc20DelegateHarness is SLErc20Delegate {
     event Log(string x, address y);
     event Log(string x, uint y);
 
@@ -322,8 +322,8 @@ contract CErc20DelegateHarness is CErc20Delegate {
         return err;
     }
 
-    function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+    function harnessRedeemFresh(address payable account, uint slTokenAmount, uint underlyingAmount) public returns (uint) {
+        return super.redeemFresh(account, slTokenAmount, underlyingAmount);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -348,8 +348,8 @@ contract CErc20DelegateHarness is CErc20Delegate {
         return err;
     }
 
-    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, SLToken slTokenCollateral) public returns (uint) {
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, slTokenCollateral);
         return err;
     }
 
@@ -374,7 +374,7 @@ contract CErc20DelegateHarness is CErc20Delegate {
     }
 }
 
-contract CErc20DelegateScenario is CErc20Delegate {
+contract SLErc20DelegateScenario is SLErc20Delegate {
     constructor() public {}
 
     function setTotalBorrows(uint totalBorrows_) public {
@@ -391,7 +391,7 @@ contract CErc20DelegateScenario is CErc20Delegate {
     }
 }
 
-contract CErc20DelegateScenarioExtra is CErc20DelegateScenario {
+contract SLErc20DelegateScenarioExtra is SLErc20DelegateScenario {
     function iHaveSpoken() public pure returns (string memory) {
       return "i have spoken";
     }
@@ -405,7 +405,7 @@ contract CErc20DelegateScenarioExtra is CErc20DelegateScenario {
     }
 }
 
-contract CDaiDelegateHarness is CDaiDelegate {
+contract SLDaiDelegateHarness is SLDaiDelegate {
     uint blockNumber = 100000;
     uint harnessExchangeRate;
     bool harnessExchangeRateStored;
@@ -440,7 +440,7 @@ contract CDaiDelegateHarness is CDaiDelegate {
     }
 }
 
-contract CDaiDelegateScenario is CDaiDelegate {
+contract SLDaiDelegateScenario is SLDaiDelegate {
     function setTotalBorrows(uint totalBorrows_) public {
         totalBorrows = totalBorrows_;
     }
@@ -455,7 +455,7 @@ contract CDaiDelegateScenario is CDaiDelegate {
     }
 }
 
-contract CDaiDelegateMakerHarness is PotLike, VatLike, GemLike, DaiJoinLike {
+contract SLDaiDelegateMakerHarness is PotLike, VatLike, GemLike, DaiJoinLike {
     /* Pot */
 
     // exchangeRate

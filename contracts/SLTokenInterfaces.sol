@@ -3,7 +3,7 @@ pragma solidity ^0.5.16;
 import "./ComptrollerInterface.sol";
 import "./InterestRateModel.sol";
 
-contract CTokenStorage {
+contract SLTokenStorage {
     /**
      * @dev Guard variable for re-entrancy checks
      */
@@ -46,7 +46,7 @@ contract CTokenStorage {
     address payable public pendingAdmin;
 
     /**
-     * @notice Contract which oversees inter-cToken operations
+     * @notice Contract which oversees inter-slToken operations
      */
     ComptrollerInterface public comptroller;
 
@@ -56,7 +56,7 @@ contract CTokenStorage {
     InterestRateModel public interestRateModel;
 
     /**
-     * @notice Initial exchange rate used when minting the first CTokens (used when totalSupply = 0)
+     * @notice Initial exchange rate used when minting the first SLTokens (used when totalSupply = 0)
      */
     uint internal initialExchangeRateMantissa;
 
@@ -116,11 +116,11 @@ contract CTokenStorage {
     mapping(address => BorrowSnapshot) internal accountBorrows;
 }
 
-contract CTokenInterface is CTokenStorage {
+contract SLTokenInterface is SLTokenStorage {
     /**
-     * @notice Indicator that this is a CToken contract (for inspection)
+     * @notice Indicator that this is a SLToken contract (for inspection)
      */
-    bool public constant isCToken = true;
+    bool public constant isSLToken = true;
 
 
     /*** Market Events ***/
@@ -153,7 +153,7 @@ contract CTokenInterface is CTokenStorage {
     /**
      * @notice Event emitted when a borrow is liquidated
      */
-    event LiquidateBorrow(address liquidator, address borrower, uint repayAmount, address cTokenCollateral, uint seizeTokens);
+    event LiquidateBorrow(address liquidator, address borrower, uint repayAmount, address slTokenCollateral, uint seizeTokens);
 
 
     /*** Admin Events ***/
@@ -240,14 +240,14 @@ contract CTokenInterface is CTokenStorage {
     function _setInterestRateModel(InterestRateModel newInterestRateModel) public returns (uint);
 }
 
-contract CErc20Storage {
+contract SLErc20Storage {
     /**
-     * @notice Underlying asset for this CToken
+     * @notice Underlying asset for this SLToken
      */
     address public underlying;
 }
 
-contract CErc20Interface is CErc20Storage {
+contract SLErc20Interface is SLErc20Storage {
 
     /*** User Interface ***/
 
@@ -257,7 +257,7 @@ contract CErc20Interface is CErc20Storage {
     function borrow(uint borrowAmount) external returns (uint);
     function repayBorrow(uint repayAmount) external returns (uint);
     function repayBorrowBehalf(address borrower, uint repayAmount) external returns (uint);
-    function liquidateBorrow(address borrower, uint repayAmount, CTokenInterface cTokenCollateral) external returns (uint);
+    function liquidateBorrow(address borrower, uint repayAmount, SLTokenInterface slTokenCollateral) external returns (uint);
 
 
     /*** Admin Functions ***/
@@ -265,14 +265,14 @@ contract CErc20Interface is CErc20Storage {
     function _addReserves(uint addAmount) external returns (uint);
 }
 
-contract CDelegationStorage {
+contract SLDelegationStorage {
     /**
      * @notice Implementation address for this contract
      */
     address public implementation;
 }
 
-contract CDelegatorInterface is CDelegationStorage {
+contract SLDelegatorInterface is SLDelegationStorage {
     /**
      * @notice Emitted when implementation is changed
      */
@@ -287,7 +287,7 @@ contract CDelegatorInterface is CDelegationStorage {
     function _setImplementation(address implementation_, bool allowResign, bytes memory becomeImplementationData) public;
 }
 
-contract CDelegateInterface is CDelegationStorage {
+contract SLDelegateInterface is SLDelegationStorage {
     /**
      * @notice Called by the delegator on a delegate to initialize it for duty
      * @dev Should revert if any issues arise which make it unfit for delegation

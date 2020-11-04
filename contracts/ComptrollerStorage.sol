@@ -1,6 +1,6 @@
 pragma solidity ^0.5.16;
 
-import "./CToken.sol";
+import "./SLToken.sol";
 import "./PriceOracle.sol";
 
 contract UnitrollerAdminStorage {
@@ -50,7 +50,7 @@ contract ComptrollerV1Storage is UnitrollerAdminStorage {
     /**
      * @notice Per-account mapping of "assets you are in", capped by maxAssets
      */
-    mapping(address => CToken[]) public accountAssets;
+    mapping(address => SLToken[]) public accountAssets;
 
 }
 
@@ -74,7 +74,7 @@ contract ComptrollerV2Storage is ComptrollerV1Storage {
     }
 
     /**
-     * @notice Official mapping of cTokens -> Market metadata
+     * @notice Official mapping of slTokens -> Market metadata
      * @dev Used e.g. to determine if a market is supported
      */
     mapping(address => Market) public markets;
@@ -104,7 +104,7 @@ contract ComptrollerV3Storage is ComptrollerV2Storage {
     }
 
     /// @notice A list of all markets
-    CToken[] public allMarkets;
+    SLToken[] public allMarkets;
 
     /// @notice The rate at which the flywheel distributes SASHIMI, per block
     uint public sashimiRate;
@@ -132,6 +132,6 @@ contract ComptrollerV4Storage is ComptrollerV3Storage {
     // @notice The borrowCapGuardian can set borrowCaps to any number for any market. Lowering the borrow cap could disable borrowing on the given market.
     address public borrowCapGuardian;
 
-    // @notice Borrow caps enforced by borrowAllowed for each cToken address. Defaults to zero which corresponds to unlimited borrowing.
+    // @notice Borrow caps enforced by borrowAllowed for each slToken address. Defaults to zero which corresponds to unlimited borrowing.
     mapping(address => uint) public borrowCaps;
 }

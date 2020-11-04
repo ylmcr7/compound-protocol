@@ -1,9 +1,9 @@
 pragma solidity ^0.5.16;
 
-import "../../contracts/CEther.sol";
+import "../../contracts/SLEther.sol";
 import "./ComptrollerScenario.sol";
 
-contract CEtherHarness is CEther {
+contract SLEtherHarness is SLEther {
     uint harnessExchangeRate;
     uint public blockNumber = 100000;
 
@@ -16,7 +16,7 @@ contract CEtherHarness is CEther {
                 string memory symbol_,
                 uint8 decimals_,
                 address payable admin_)
-    CEther(
+    SLEther(
     comptroller_,
     interestRateModel_,
     initialExchangeRateMantissa,
@@ -88,8 +88,8 @@ contract CEtherHarness is CEther {
         return err;
     }
 
-    function harnessRedeemFresh(address payable account, uint cTokenAmount, uint underlyingAmount) public returns (uint) {
-        return super.redeemFresh(account, cTokenAmount, underlyingAmount);
+    function harnessRedeemFresh(address payable account, uint slTokenAmount, uint underlyingAmount) public returns (uint) {
+        return super.redeemFresh(account, slTokenAmount, underlyingAmount);
     }
 
     function harnessAccountBorrows(address account) public view returns (uint principal, uint interestIndex) {
@@ -114,8 +114,8 @@ contract CEtherHarness is CEther {
         return err;
     }
 
-    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, CToken cTokenCollateral) public returns (uint) {
-        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, cTokenCollateral);
+    function harnessLiquidateBorrowFresh(address liquidator, address borrower, uint repayAmount, SLToken slTokenCollateral) public returns (uint) {
+        (uint err,) = liquidateBorrowFresh(liquidator, borrower, repayAmount, slTokenCollateral);
         return err;
     }
 
@@ -156,7 +156,7 @@ contract CEtherHarness is CEther {
     }
 }
 
-contract CEtherScenario is CEther {
+contract SLEtherScenario is SLEther {
     uint reserveFactor;
 
     constructor(string memory name_,
@@ -166,7 +166,7 @@ contract CEtherScenario is CEther {
                 ComptrollerInterface comptroller_,
                 InterestRateModel interestRateModel_,
                 uint initialExchangeRateMantissa)
-        CEther(comptroller_,
+        SLEther(comptroller_,
                interestRateModel_,
                initialExchangeRateMantissa,
                name_,

@@ -1,13 +1,13 @@
 pragma solidity ^0.5.16;
 
-import "./CErc20Delegate.sol";
+import "./SLErc20Delegate.sol";
 
 /**
- * @title Compound's CDai Contract
- * @notice CToken which wraps Multi-Collateral DAI
- * @author Compound
+ * @title SashimiLending's SLDai Contract
+ * @notice SLToken which wraps Multi-Collateral DAI
+ * @author SashimiLending
  */
-contract CDaiDelegate is CErc20Delegate {
+contract SLDaiDelegate is SLErc20Delegate {
     /**
      * @notice DAI adapter address
      */
@@ -91,7 +91,7 @@ contract CDaiDelegate is CErc20Delegate {
         daiJoin.exit(address(this), bal / RAY);
     }
 
-    /*** CToken Overrides ***/
+    /*** SLToken Overrides ***/
 
     /**
       * @notice Accrues DSR then applies accrued interest to total borrows and reserves
@@ -102,7 +102,7 @@ contract CDaiDelegate is CErc20Delegate {
         // Accumulate DSR interest
         PotLike(potAddress).drip();
 
-        // Accumulate CToken interest
+        // Accumulate SLToken interest
         return super.accrueInterest();
     }
 

@@ -16,8 +16,8 @@ contract ComptrollerScenarioG3 is ComptrollerG3 {
         return sashimiAddress;
     }
 
-    function membershipLength(CToken cToken) public view returns (uint) {
-        return accountAssets[address(cToken)].length;
+    function membershipLength(SLToken slToken) public view returns (uint) {
+        return accountAssets[address(slToken)].length;
     }
 
     function fastForward(uint blocks) public returns (uint) {
@@ -53,7 +53,7 @@ contract ComptrollerScenarioG3 is ComptrollerG3 {
         return sashimiMarkets;
     }
 
-    function unlist(CToken cToken) public {
-        markets[address(cToken)].isListed = false;
+    function unlist(SLToken slToken) public {
+        markets[address(slToken)].isListed = false;
     }
 }
