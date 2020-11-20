@@ -6,11 +6,11 @@ const {
 
 const {
   makeComptroller,
-  makeCToken,
+  makeSLToken,
   makePriceOracle,
   pretendBorrow,
   borrowSnapshot
-} = require('./Utils/Compound');
+} = require('./Utils/SashimiLending');
 
 describe('Const', () => {
   it("does the right thing and not too expensive", async () => {

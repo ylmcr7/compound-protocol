@@ -2,7 +2,7 @@ import { Contract } from '../Contract';
 import { Callable, Sendable } from '../Invokation';
 import { encodedNumber } from '../Encoding';
 
-export interface CTokenMethods {
+export interface SLTokenMethods {
   _resignImplementation(): Sendable<void>;
   balanceOfUnderlying(address: string): Callable<number>;
   borrowBalanceCurrent(address: string): Callable<string>;
@@ -49,17 +49,17 @@ export interface CTokenMethods {
   _acceptAdmin(): Sendable<number>;
 }
 
-export interface CTokenScenarioMethods extends CTokenMethods {
+export interface SLTokenScenarioMethods extends SLTokenMethods {
   setTotalBorrows(amount: encodedNumber): Sendable<void>;
   setTotalReserves(amount: encodedNumber): Sendable<void>;
 }
 
-export interface CToken extends Contract {
-  methods: CTokenMethods;
+export interface SLToken extends Contract {
+  methods: SLTokenMethods;
   name: string;
 }
 
-export interface CTokenScenario extends Contract {
-  methods: CTokenScenarioMethods;
+export interface SLTokenScenario extends Contract {
+  methods: SLTokenScenarioMethods;
   name: string;
 }

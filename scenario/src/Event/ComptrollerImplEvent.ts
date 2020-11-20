@@ -129,13 +129,13 @@ async function becomeG3(
   from: string,
   comptrollerImpl: ComptrollerImpl,
   unitroller: Unitroller,
-  compRate: encodedNumber,
-  compMarkets: string[],
+  sashimiRate: encodedNumber,
+  sashimiMarkets: string[],
   otherMarkets: string[]
 ): Promise<World> {
   let invokation = await invoke(
     world,
-    comptrollerImpl.methods._become(unitroller._address, compRate, compMarkets, otherMarkets),
+    comptrollerImpl.methods._become(unitroller._address, sashimiRate, sashimiMarkets, otherMarkets),
     from,
     ComptrollerErrorReporter
   );
@@ -274,26 +274,26 @@ export function comptrollerImplCommands() {
     new Command<{
       unitroller: Unitroller;
       comptrollerImpl: ComptrollerImpl;
-      compRate: NumberV;
-      compMarkets: ArrayV<AddressV>;
+      sashimiRate: NumberV;
+      sashimiMarkets: ArrayV<AddressV>;
       otherMarkets: ArrayV<AddressV>;
     }>(
       `
         #### BecomeG3
 
-        * "ComptrollerImpl <Impl> BecomeG3 <Rate> <CompMarkets> <OtherMarkets>" - Become the comptroller, if possible.
-          * E.g. "ComptrollerImpl MyImpl BecomeG3 0.1e18 [cDAI, cETH, cUSDC]
+        * "ComptrollerImpl <Impl> BecomeG3 <Rate> <SashimiMarkets> <OtherMarkets>" - Become the comptroller, if possible.
+          * E.g. "ComptrollerImpl MyImpl BecomeG3 0.1e18 [slDAI, slETH, slUSDC]
       `,
       'BecomeG3',
       [
         new Arg('unitroller', getUnitroller, { implicit: true }),
         new Arg('comptrollerImpl', getComptrollerImpl),
-        new Arg('compRate', getNumberV, { default: new NumberV(1e18) }),
-        new Arg('compMarkets', getArrayV(getAddressV),  {default: new ArrayV([]) }),
+        new Arg('sashimiRate', getNumberV, { default: new NumberV(1e18) }),
+        new Arg('sashimiMarkets', getArrayV(getAddressV),  {default: new ArrayV([]) }),
         new Arg('otherMarkets', getArrayV(getAddressV), { default: new ArrayV([]) })
       ],
-      (world, from, { unitroller, comptrollerImpl, compRate, compMarkets, otherMarkets }) => {
-        return becomeG3(world, from, comptrollerImpl, unitroller, compRate.encode(), compMarkets.val.map(a => a.val), otherMarkets.val.map(a => a.val))
+      (world, from, { unitroller, comptrollerImpl, sashimiRate, sashimiMarkets, otherMarkets }) => {
+        return becomeG3(world, from, comptrollerImpl, unitroller, sashimiRate.encode(), sashimiMarkets.val.map(a => a.val), otherMarkets.val.map(a => a.val))
       },
       { namePos: 1 }
     ),
@@ -305,8 +305,8 @@ export function comptrollerImplCommands() {
       `
         #### Become
 
-        * "ComptrollerImpl <Impl> Become <Rate> <CompMarkets> <OtherMarkets>" - Become the comptroller, if possible.
-          * E.g. "ComptrollerImpl MyImpl Become 0.1e18 [cDAI, cETH, cUSDC]
+        * "ComptrollerImpl <Impl> Become <Rate> <SashimiMarkets> <OtherMarkets>" - Become the comptroller, if possible.
+          * E.g. "ComptrollerImpl MyImpl Become 0.1e18 [slDAI, slETH, slUSDC]
       `,
       'Become',
       [

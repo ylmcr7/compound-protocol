@@ -1,7 +1,7 @@
 import { Event } from '../Event';
 import { World } from '../World';
-import { CErc20Delegator, CErc20DelegatorScenario } from '../Contract/CErc20Delegator';
-import { CToken } from '../Contract/CToken';
+import { SLErc20Delegator, SLErc20DelegatorScenario } from '../Contract/SLErc20Delegator';
+import { SLToken } from '../Contract/SLToken';
 import { Invokation, invoke } from '../Invokation';
 import { getAddressV, getExpNumberV, getNumberV, getStringV } from '../CoreValue';
 import { AddressV, NumberV, StringV } from '../Value';
@@ -9,16 +9,16 @@ import { Arg, Fetcher, getFetcherValue } from '../Command';
 import { storeAndSaveContract } from '../Networks';
 import { getContract, getTestContract } from '../Contract';
 
-const CErc20Contract = getContract('CErc20Immutable');
-const CErc20Delegator = getContract('CErc20Delegator');
-const CErc20DelegatorScenario = getTestContract('CErc20DelegatorScenario');
-const CEtherContract = getContract('CEther');
-const CErc20ScenarioContract = getTestContract('CErc20Scenario');
-const CEtherScenarioContract = getTestContract('CEtherScenario');
-const CEvilContract = getTestContract('CEvil');
+const SLErc20Contract = getContract('SLErc20Immutable');
+const SLErc20Delegator = getContract('SLErc20Delegator');
+const SLErc20DelegatorScenario = getTestContract('SLErc20DelegatorScenario');
+const SLEtherContract = getContract('SLEther');
+const SLErc20ScenarioContract = getTestContract('SLErc20Scenario');
+const SLEtherScenarioContract = getTestContract('SLEtherScenario');
+const CEvilContract = getTestContract('SLEvil');
 
 export interface TokenData {
-  invokation: Invokation<CToken>;
+  invokation: Invokation<SLToken>;
   name: string;
   symbol: string;
   decimals?: number;
@@ -29,11 +29,11 @@ export interface TokenData {
   admin?: string;
 }
 
-export async function buildCToken(
+export async function buildSLToken(
   world: World,
   from: string,
   params: Event
-): Promise<{ world: World; cToken: CToken; tokenData: TokenData }> {
+): Promise<{ world: World; slToken: SLToken; tokenData: TokenData }> {
   const fetchers = [
     new Fetcher<
       {
@@ -51,12 +51,12 @@ export async function buildCToken(
       TokenData
     >(
     `
-      #### CErc20Delegator
+      #### SLErc20Delegator
 
-      * "CErc20Delegator symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address> implementation:<Address> becomeImplementationData:<String>" - The real deal CToken
-        * E.g. "CToken Deploy CErc20Delegator cDAI \"Compound DAI\" (Erc20 DAI Address) (Comptroller Address) (InterestRateModel Address) 1.0 8 Geoff (CToken CDaiDelegate Address) "0x0123434anyByTes314535q" "
+      * "SLErc20Delegator symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address> implementation:<Address> becomeImplementationData:<String>" - The real deal SLToken
+        * E.g. "SLToken Deploy SLErc20Delegator slDAI \"Compound DAI\" (Erc20 DAI Address) (Comptroller Address) (InterestRateModel Address) 1.0 8 Geoff (SLToken CDaiDelegate Address) "0x0123434anyByTes314535q" "
     `,
-      'CErc20Delegator',
+      'SLErc20Delegator',
       [
         new Arg('symbol', getStringV),
         new Arg('name', getStringV),
@@ -85,7 +85,7 @@ export async function buildCToken(
         }
       ) => {
         return {
-          invokation: await CErc20Delegator.deploy<CErc20Delegator>(world, from, [
+          invokation: await SLErc20Delegator.deploy<SLErc20Delegator>(world, from, [
             underlying.val,
             comptroller.val,
             interestRateModel.val,
@@ -101,7 +101,7 @@ export async function buildCToken(
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: underlying.val,
-          contract: 'CErc20Delegator',
+          contract: 'SLErc20Delegator',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -124,12 +124,12 @@ export async function buildCToken(
       TokenData
     >(
     `
-      #### CErc20DelegatorScenario
+      #### SLErc20DelegatorScenario
 
-      * "CErc20DelegatorScenario symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address> implementation:<Address> becomeImplementationData:<String>" - A CToken Scenario for local testing
-        * E.g. "CToken Deploy CErc20DelegatorScenario cDAI \"Compound DAI\" (Erc20 DAI Address) (Comptroller Address) (InterestRateModel Address) 1.0 8 Geoff (CToken CDaiDelegate Address) "0x0123434anyByTes314535q" "
+      * "SLErc20DelegatorScenario symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address> implementation:<Address> becomeImplementationData:<String>" - A SLToken Scenario for local testing
+        * E.g. "SLToken Deploy SLErc20DelegatorScenario slDAI \"Compound DAI\" (Erc20 DAI Address) (Comptroller Address) (InterestRateModel Address) 1.0 8 Geoff (SLToken CDaiDelegate Address) "0x0123434anyByTes314535q" "
     `,
-      'CErc20DelegatorScenario',
+      'SLErc20DelegatorScenario',
       [
         new Arg('symbol', getStringV),
         new Arg('name', getStringV),
@@ -158,7 +158,7 @@ export async function buildCToken(
         }
       ) => {
         return {
-          invokation: await CErc20DelegatorScenario.deploy<CErc20DelegatorScenario>(world, from, [
+          invokation: await SLErc20DelegatorScenario.deploy<SLErc20DelegatorScenario>(world, from, [
             underlying.val,
             comptroller.val,
             interestRateModel.val,
@@ -174,7 +174,7 @@ export async function buildCToken(
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: underlying.val,
-          contract: 'CErc20DelegatorScenario',
+          contract: 'SLErc20DelegatorScenario',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -184,8 +184,8 @@ export async function buildCToken(
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, underlying: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV, admin: AddressV}, TokenData>(`
         #### Scenario
 
-        * "Scenario symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A CToken Scenario for local testing
-          * E.g. "CToken Deploy Scenario cZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "Scenario symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A SLToken Scenario for local testing
+          * E.g. "SLToken Deploy Scenario slZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
       "Scenario",
       [
@@ -200,12 +200,12 @@ export async function buildCToken(
       ],
       async (world, {symbol, name, underlying, comptroller, interestRateModel, initialExchangeRate, decimals, admin}) => {
         return {
-          invokation: await CErc20ScenarioContract.deploy<CToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+          invokation: await SLErc20ScenarioContract.deploy<SLToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: underlying.val,
-          contract: 'CErc20Scenario',
+          contract: 'SLErc20Scenario',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -213,12 +213,12 @@ export async function buildCToken(
     ),
 
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, admin: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV}, TokenData>(`
-        #### CEtherScenario
+        #### SLEtherScenario
 
-        * "CEtherScenario symbol:<String> name:<String> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A CToken Scenario for local testing
-          * E.g. "CToken Deploy CEtherScenario cETH \"Compound Ether\" (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "SLEtherScenario symbol:<String> name:<String> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A SLToken Scenario for local testing
+          * E.g. "SLToken Deploy SLEtherScenario slETH \"Compound Ether\" (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
-      "CEtherScenario",
+      "SLEtherScenario",
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
@@ -230,12 +230,12 @@ export async function buildCToken(
       ],
       async (world, {symbol, name, comptroller, interestRateModel, initialExchangeRate, decimals, admin}) => {
         return {
-          invokation: await CEtherScenarioContract.deploy<CToken>(world, from, [name.val, symbol.val, decimals.val, admin.val, comptroller.val, interestRateModel.val, initialExchangeRate.val]),
+          invokation: await SLEtherScenarioContract.deploy<SLToken>(world, from, [name.val, symbol.val, decimals.val, admin.val, comptroller.val, interestRateModel.val, initialExchangeRate.val]),
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: "",
-          contract: 'CEtherScenario',
+          contract: 'SLEtherScenario',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -243,12 +243,12 @@ export async function buildCToken(
     ),
 
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, admin: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV}, TokenData>(`
-        #### CEther
+        #### SLEther
 
-        * "CEther symbol:<String> name:<String> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A CToken Scenario for local testing
-          * E.g. "CToken Deploy CEther cETH \"Compound Ether\" (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "SLEther symbol:<String> name:<String> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A SLToken Scenario for local testing
+          * E.g. "SLToken Deploy SLEther slETH \"Compound Ether\" (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
-      "CEther",
+      "SLEther",
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
@@ -260,12 +260,12 @@ export async function buildCToken(
       ],
       async (world, {symbol, name, comptroller, interestRateModel, initialExchangeRate, decimals, admin}) => {
         return {
-          invokation: await CEtherContract.deploy<CToken>(world, from, [comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+          invokation: await SLEtherContract.deploy<SLToken>(world, from, [comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: "",
-          contract: 'CEther',
+          contract: 'SLEther',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -273,12 +273,12 @@ export async function buildCToken(
     ),
 
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, admin: AddressV, underlying: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV}, TokenData>(`
-        #### CErc20
+        #### SLErc20
 
-        * "CErc20 symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A official CToken contract
-          * E.g. "CToken Deploy CErc20 cZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "SLErc20 symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A official SLToken contract
+          * E.g. "SLToken Deploy SLErc20 slZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
-      "CErc20",
+      "SLErc20",
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
@@ -292,12 +292,12 @@ export async function buildCToken(
       async (world, {symbol, name, underlying, comptroller, interestRateModel, initialExchangeRate, decimals, admin}) => {
 
         return {
-          invokation: await CErc20Contract.deploy<CToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+          invokation: await SLErc20Contract.deploy<SLToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: underlying.val,
-          contract: 'CErc20',
+          contract: 'SLErc20',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -305,12 +305,12 @@ export async function buildCToken(
     ),
 
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, admin: AddressV, underlying: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV}, TokenData>(`
-        #### CEvil
+        #### SLEvil
 
-        * "CEvil symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A malicious CToken contract
-          * E.g. "CToken Deploy CEvil cEVL \"Compound EVL\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "SLEvil symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A malicious SLToken contract
+          * E.g. "SLToken Deploy SLEvil cEVL \"Compound EVL\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
-      "CEvil",
+      "SLEvil",
       [
         new Arg("symbol", getStringV),
         new Arg("name", getStringV),
@@ -323,12 +323,12 @@ export async function buildCToken(
       ],
       async (world, {symbol, name, underlying, comptroller, interestRateModel, initialExchangeRate, decimals, admin}) => {
         return {
-          invokation: await CEvilContract.deploy<CToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+          invokation: await CEvilContract.deploy<SLToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
           name: name.val,
           symbol: symbol.val,
           decimals: decimals.toNumber(),
           underlying: underlying.val,
-          contract: 'CEvil',
+          contract: 'SLEvil',
           initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
           admin: admin.val
         };
@@ -338,8 +338,8 @@ export async function buildCToken(
     new Fetcher<{symbol: StringV, name: StringV, decimals: NumberV, admin: AddressV, underlying: AddressV, comptroller: AddressV, interestRateModel: AddressV, initialExchangeRate: NumberV}, TokenData>(`
         #### Standard
 
-        * "symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A official CToken contract
-          * E.g. "CToken Deploy Standard cZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
+        * "symbol:<String> name:<String> underlying:<Address> comptroller:<Address> interestRateModel:<Address> initialExchangeRate:<Number> decimals:<Number> admin: <Address>" - A official SLToken contract
+          * E.g. "SLToken Deploy Standard slZRX \"Compound ZRX\" (Erc20 ZRX Address) (Comptroller Address) (InterestRateModel Address) 1.0 8"
       `,
       "Standard",
       [
@@ -356,23 +356,23 @@ export async function buildCToken(
         // Note: we're going to use the scenario contract as the standard deployment on local networks
         if (world.isLocalNetwork()) {
           return {
-            invokation: await CErc20ScenarioContract.deploy<CToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+            invokation: await SLErc20ScenarioContract.deploy<SLToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
             name: name.val,
             symbol: symbol.val,
             decimals: decimals.toNumber(),
             underlying: underlying.val,
-            contract: 'CErc20Scenario',
+            contract: 'SLErc20Scenario',
             initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
             admin: admin.val
           };
         } else {
           return {
-            invokation: await CErc20Contract.deploy<CToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
+            invokation: await SLErc20Contract.deploy<SLToken>(world, from, [underlying.val, comptroller.val, interestRateModel.val, initialExchangeRate.val, name.val, symbol.val, decimals.val, admin.val]),
             name: name.val,
             symbol: symbol.val,
             decimals: decimals.toNumber(),
             underlying: underlying.val,
-            contract: 'CErc20Immutable',
+            contract: 'SLErc20Immutable',
             initial_exchange_rate_mantissa: initialExchangeRate.encode().toString(),
             admin: admin.val
           };
@@ -382,7 +382,7 @@ export async function buildCToken(
     )
   ];
 
-  let tokenData = await getFetcherValue<any, TokenData>("DeployCToken", fetchers, world, params);
+  let tokenData = await getFetcherValue<any, TokenData>("DeploySLToken", fetchers, world, params);
   let invokation = tokenData.invokation;
   delete tokenData.invokation;
 
@@ -390,19 +390,19 @@ export async function buildCToken(
     throw invokation.error;
   }
 
-  const cToken = invokation.value!;
-  tokenData.address = cToken._address;
+  const slToken = invokation.value!;
+  tokenData.address = slToken._address;
 
   world = await storeAndSaveContract(
     world,
-    cToken,
+    slToken,
     tokenData.symbol,
     invokation,
     [
-      { index: ['cTokens', tokenData.symbol], data: tokenData },
+      { index: ['slTokens', tokenData.symbol], data: tokenData },
       { index: ['Tokens', tokenData.symbol], data: tokenData }
     ]
   );
 
-  return {world, cToken, tokenData};
+  return {world, slToken, tokenData};
 }

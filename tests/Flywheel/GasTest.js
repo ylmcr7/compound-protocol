@@ -1,7 +1,7 @@
 const {
   makeComptroller,
-  makeCToken
-} = require('../Utils/Compound');
+  makeSLToken
+} = require('../Utils/SashimiLending');
 const {
   etherExp,
   etherDouble,
@@ -17,16 +17,16 @@ describe.skip('Flywheel trace ops', () => {
     let interestRateModelOpts = {borrowRate: 0.000001};
     [root, a1, a2, a3, ...accounts] = saddle.accounts;
     comptroller = await makeComptroller();
-    market = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
-    await send(comptroller, '_addCompMarkets', [[market].map(c => c._address)]);
+    market = await makeSLToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
+    await send(comptroller, '_addSashimiMarkets', [[market].map(sl => sl._address)]);
   });
 
   it('update supply index SSTOREs', async () => {
     await send(comptroller, 'setBlockNumber', [100]);
     await send(market, 'harnessSetTotalBorrows', [etherUnsigned(11e18)]);
-    await send(comptroller, 'setCompSpeed', [market._address, etherExp(0.5)]);
+    await send(comptroller, 'setSashimiSpeed', [market._address, etherExp(0.5)]);
 
-    const tx = await send(comptroller, 'harnessUpdateCompSupplyIndex', [market._address]);
+    const tx = await send(comptroller, 'harnessUpdateSashimiSupplyIndex', [market._address]);
 
     const ops = {};
     await saddle.trace(tx, {
@@ -42,9 +42,9 @@ describe.skip('Flywheel trace ops', () => {
   it('update borrow index SSTOREs', async () => {
     await send(comptroller, 'setBlockNumber', [100]);
     await send(market, 'harnessSetTotalBorrows', [etherUnsigned(11e18)]);
-    await send(comptroller, 'setCompSpeed', [market._address, etherExp(0.5)]);
+    await send(comptroller, 'setSashimiSpeed', [market._address, etherExp(0.5)]);
 
-    const tx = await send(comptroller, 'harnessUpdateCompBorrowIndex', [market._address, etherExp(1.1)]);
+    const tx = await send(comptroller, 'harnessUpdateSashimiBorrowIndex', [market._address, etherExp(1.1)]);
 
     const ops = {};
     await saddle.trace(tx, {

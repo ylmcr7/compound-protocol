@@ -80,7 +80,7 @@ describe.skip('CompWheelFuzzTest', () => {
 
   let initialState = globals => {
     return {
-      // ctoken
+      // sltoken
       accrualBlockNumber: globals.blockNumber,
       borrowIndex: new bn(1),
       totalCash: new bn(0),

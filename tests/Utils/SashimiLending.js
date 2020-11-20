@@ -62,12 +62,12 @@ async function makeComptroller(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
-    const compRate = etherUnsigned(dfn(opts.compRate, 1e18));
-    const compMarkets = opts.compMarkets || [];
+    const sashimiRate = etherUnsigned(dfn(opts.sashimiRate, 1e18));
+    const sashimiMarkets = opts.sashimiMarkets || [];
     const otherMarkets = opts.otherMarkets || [];
 
     await send(unitroller, '_setPendingImplementation', [comptroller._address]);
-    await send(comptroller, '_become', [unitroller._address, compRate, compMarkets, otherMarkets]);
+    await send(comptroller, '_become', [unitroller._address, sashimiRate, sashimiMarkets, otherMarkets]);
     mergeInterface(unitroller, comptroller);
     await send(unitroller, '_setLiquidationIncentive', [liquidationIncentive]);
     await send(unitroller, '_setCloseFactor', [closeFactor]);
@@ -84,8 +84,8 @@ async function makeComptroller(opts = {}) {
     const closeFactor = etherMantissa(dfn(opts.closeFactor, .051));
     const maxAssets = etherUnsigned(dfn(opts.maxAssets, 10));
     const liquidationIncentive = etherMantissa(1);
-    const comp = opts.comp || await deploy('Comp', [opts.compOwner || root]);
-    const compRate = etherUnsigned(dfn(opts.compRate, 1e18));
+    const sashimi = opts.sashimi || await deploy('SashimiToken');
+    const sashimiRate = etherUnsigned(dfn(opts.sashimiRate, 1e18));
 
     await send(unitroller, '_setPendingImplementation', [comptroller._address]);
     await send(comptroller, '_become', [unitroller._address]);
@@ -94,33 +94,33 @@ async function makeComptroller(opts = {}) {
     await send(unitroller, '_setCloseFactor', [closeFactor]);
     await send(unitroller, '_setMaxAssets', [maxAssets]);
     await send(unitroller, '_setPriceOracle', [priceOracle._address]);
-    await send(unitroller, 'setCompAddress', [comp._address]); // harness only
-    await send(unitroller, '_setCompRate', [compRate]);
+    await send(unitroller, 'setSashimiAddress', [sashimi._address]); // harness only
+    await send(unitroller, '_setSashimiRate', [sashimiRate]);
 
-    return Object.assign(unitroller, { priceOracle, comp });
+    return Object.assign(unitroller, { priceOracle, sashimi });
   }
 }
 
-async function makeCToken(opts = {}) {
+async function makeSLToken(opts = {}) {
   const {
     root = saddle.account,
-    kind = 'cerc20'
+    kind = 'slerc20'
   } = opts || {};
 
   const comptroller = opts.comptroller || await makeComptroller(opts.comptrollerOpts);
   const interestRateModel = opts.interestRateModel || await makeInterestRateModel(opts.interestRateModelOpts);
   const exchangeRate = etherMantissa(dfn(opts.exchangeRate, 1));
   const decimals = etherUnsigned(dfn(opts.decimals, 8));
-  const symbol = opts.symbol || (kind === 'cether' ? 'cETH' : 'cOMG');
-  const name = opts.name || `CToken ${symbol}`;
+  const symbol = opts.symbol || (kind === 'slether' ? 'slETH' : 'slOMG');
+  const name = opts.name || `SLToken ${symbol}`;
   const admin = opts.admin || root;
 
-  let cToken, underlying;
-  let cDelegator, cDelegatee, cDaiMaker;
+  let slToken, underlying;
+  let slDelegator, slDelegatee, slDaiMaker;
 
   switch (kind) {
-    case 'cether':
-      cToken = await deploy('CEtherHarness',
+    case 'slether':
+      slToken = await deploy('SLEtherHarness',
         [
           comptroller._address,
           interestRateModel._address,
@@ -132,11 +132,11 @@ async function makeCToken(opts = {}) {
         ])
       break;
 
-    case 'cdai':
-      cDaiMaker  = await deploy('CDaiDelegateMakerHarness');
-      underlying = cDaiMaker;
-      cDelegatee = await deploy('CDaiDelegateHarness');
-      cDelegator = await deploy('CErc20Delegator',
+    case 'sldai':
+      slDaiMaker  = await deploy('SLDaiDelegateMakerHarness');
+      underlying = slDaiMaker;
+      slDelegatee = await deploy('SLDaiDelegateHarness');
+      slDelegator = await deploy('SLErc20Delegator',
         [
           underlying._address,
           comptroller._address,
@@ -146,18 +146,18 @@ async function makeCToken(opts = {}) {
           symbol,
           decimals,
           admin,
-          cDelegatee._address,
-          encodeParameters(['address', 'address'], [cDaiMaker._address, cDaiMaker._address])
+          slDelegatee._address,
+          encodeParameters(['address', 'address'], [slDaiMaker._address, slDaiMaker._address])
         ]
       );
-      cToken = await saddle.getContractAt('CDaiDelegateHarness', cDelegator._address); // XXXS at
+      slToken = await saddle.getContractAt('SLDaiDelegateHarness', slDelegator._address); // XXXS at
       break;
 
-    case 'cerc20':
+    case 'slerc20':
     default:
       underlying = opts.underlying || await makeToken(opts.underlyingOpts);
-      cDelegatee = await deploy('CErc20DelegateHarness');
-      cDelegator = await deploy('CErc20Delegator',
+      slDelegatee = await deploy('SLErc20DelegateHarness');
+      slDelegator = await deploy('SLErc20Delegator',
         [
           underlying._address,
           comptroller._address,
@@ -167,33 +167,33 @@ async function makeCToken(opts = {}) {
           symbol,
           decimals,
           admin,
-          cDelegatee._address,
+          slDelegatee._address,
           "0x0"
         ]
       );
-      cToken = await saddle.getContractAt('CErc20DelegateHarness', cDelegator._address); // XXXS at
+      slToken = await saddle.getContractAt('SLErc20DelegateHarness', slDelegator._address); // XXXS at
       break;
   }
 
   if (opts.supportMarket) {
-    await send(comptroller, '_supportMarket', [cToken._address]);
+    await send(comptroller, '_supportMarket', [slToken._address]);
   }
 
   if (opts.addCompMarket) {
-    await send(comptroller, '_addCompMarket', [cToken._address]);
+    await send(comptroller, '_addSashimiMarket', [slToken._address]);
   }
 
   if (opts.underlyingPrice) {
     const price = etherMantissa(opts.underlyingPrice);
-    await send(comptroller.priceOracle, 'setUnderlyingPrice', [cToken._address, price]);
+    await send(comptroller.priceOracle, 'setUnderlyingPrice', [slToken._address, price]);
   }
 
   if (opts.collateralFactor) {
     const factor = etherMantissa(opts.collateralFactor);
-    expect(await send(comptroller, '_setCollateralFactor', [cToken._address, factor])).toSucceed();
+    expect(await send(comptroller, '_setCollateralFactor', [slToken._address, factor])).toSucceed();
   }
 
-  return Object.assign(cToken, { name, symbol, underlying, comptroller, interestRateModel });
+  return Object.assign(slToken, { name, symbol, underlying, comptroller, interestRateModel });
 }
 
 async function makeInterestRateModel(opts = {}) {
@@ -261,56 +261,56 @@ async function totalSupply(token) {
   return etherUnsigned(await call(token, 'totalSupply'));
 }
 
-async function borrowSnapshot(cToken, account) {
-  const { principal, interestIndex } = await call(cToken, 'harnessAccountBorrows', [account]);
+async function borrowSnapshot(slToken, account) {
+  const { principal, interestIndex } = await call(slToken, 'harnessAccountBorrows', [account]);
   return { principal: etherUnsigned(principal), interestIndex: etherUnsigned(interestIndex) };
 }
 
-async function totalBorrows(cToken) {
-  return etherUnsigned(await call(cToken, 'totalBorrows'));
+async function totalBorrows(slToken) {
+  return etherUnsigned(await call(slToken, 'totalBorrows'));
 }
 
-async function totalReserves(cToken) {
-  return etherUnsigned(await call(cToken, 'totalReserves'));
+async function totalReserves(slToken) {
+  return etherUnsigned(await call(slToken, 'totalReserves'));
 }
 
-async function enterMarkets(cTokens, from) {
-  return await send(cTokens[0].comptroller, 'enterMarkets', [cTokens.map(c => c._address)], { from });
+async function enterMarkets(slTokens, from) {
+  return await send(slTokens[0].comptroller, 'enterMarkets', [slTokens.map(sl => sl._address)], { from });
 }
 
-async function fastForward(cToken, blocks = 5) {
-  return await send(cToken, 'harnessFastForward', [blocks]);
+async function fastForward(slToken, blocks = 5) {
+  return await send(slToken, 'harnessFastForward', [blocks]);
 }
 
-async function setBalance(cToken, account, balance) {
-  return await send(cToken, 'harnessSetBalance', [account, balance]);
+async function setBalance(slToken, account, balance) {
+  return await send(slToken, 'harnessSetBalance', [account, balance]);
 }
 
-async function setEtherBalance(cEther, balance) {
-  const current = await etherBalance(cEther._address);
+async function setEtherBalance(slEther, balance) {
+  const current = await etherBalance(slEther._address);
   const root = saddle.account;
-  expect(await send(cEther, 'harnessDoTransferOut', [root, current])).toSucceed();
-  expect(await send(cEther, 'harnessDoTransferIn', [root, balance], { value: balance })).toSucceed();
+  expect(await send(slEther, 'harnessDoTransferOut', [root, current])).toSucceed();
+  expect(await send(slEther, 'harnessDoTransferIn', [root, balance], { value: balance })).toSucceed();
 }
 
-async function getBalances(cTokens, accounts) {
+async function getBalances(slTokens, accounts) {
   const balances = {};
-  for (let cToken of cTokens) {
-    const cBalances = balances[cToken._address] = {};
+  for (let slToken of slTokens) {
+    const cBalances = balances[slToken._address] = {};
     for (let account of accounts) {
       cBalances[account] = {
         eth: await etherBalance(account),
-        cash: cToken.underlying && await balanceOf(cToken.underlying, account),
-        tokens: await balanceOf(cToken, account),
-        borrows: (await borrowSnapshot(cToken, account)).principal
+        cash: slToken.underlying && await balanceOf(slToken.underlying, account),
+        tokens: await balanceOf(slToken, account),
+        borrows: (await borrowSnapshot(slToken, account)).principal
       };
     }
-    cBalances[cToken._address] = {
-      eth: await etherBalance(cToken._address),
-      cash: cToken.underlying && await balanceOf(cToken.underlying, cToken._address),
-      tokens: await totalSupply(cToken),
-      borrows: await totalBorrows(cToken),
-      reserves: await totalReserves(cToken)
+    cBalances[slToken._address] = {
+      eth: await etherBalance(slToken._address),
+      cash: slToken.underlying && await balanceOf(slToken.underlying, slToken._address),
+      tokens: await totalSupply(slToken),
+      borrows: await totalBorrows(slToken),
+      reserves: await totalReserves(slToken)
     };
   }
   return balances;
@@ -318,75 +318,75 @@ async function getBalances(cTokens, accounts) {
 
 async function adjustBalances(balances, deltas) {
   for (let delta of deltas) {
-    let cToken, account, key, diff;
+    let slToken, account, key, diff;
     if (delta.length == 4) {
-      ([cToken, account, key, diff] = delta);
+      ([slToken, account, key, diff] = delta);
     } else {
-      ([cToken, key, diff] = delta);
-      account = cToken._address;
+      ([slToken, key, diff] = delta);
+      account = slToken._address;
     }
-    balances[cToken._address][account][key] = balances[cToken._address][account][key].add(diff);
+    balances[slToken._address][account][key] = balances[slToken._address][account][key].add(diff);
   }
   return balances;
 }
 
 
-async function preApprove(cToken, from, amount, opts = {}) {
+async function preApprove(slToken, from, amount, opts = {}) {
   if (dfn(opts.faucet, true)) {
-    expect(await send(cToken.underlying, 'harnessSetBalance', [from, amount], { from })).toSucceed();
+    expect(await send(slToken.underlying, 'harnessSetBalance', [from, amount], { from })).toSucceed();
   }
 
-  return send(cToken.underlying, 'approve', [cToken._address, amount], { from });
+  return send(slToken.underlying, 'approve', [slToken._address, amount], { from });
 }
 
-async function quickMint(cToken, minter, mintAmount, opts = {}) {
+async function quickMint(slToken, minter, mintAmount, opts = {}) {
   // make sure to accrue interest
-  await fastForward(cToken, 1);
+  await fastForward(slToken, 1);
 
   if (dfn(opts.approve, true)) {
-    expect(await preApprove(cToken, minter, mintAmount, opts)).toSucceed();
+    expect(await preApprove(slToken, minter, mintAmount, opts)).toSucceed();
   }
   if (dfn(opts.exchangeRate)) {
-    expect(await send(cToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
+    expect(await send(slToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
   }
-  return send(cToken, 'mint', [mintAmount], { from: minter });
+  return send(slToken, 'mint', [mintAmount], { from: minter });
 }
 
 
-async function preSupply(cToken, account, tokens, opts = {}) {
+async function preSupply(slToken, account, tokens, opts = {}) {
   if (dfn(opts.total, true)) {
-    expect(await send(cToken, 'harnessSetTotalSupply', [tokens])).toSucceed();
+    expect(await send(slToken, 'harnessSetTotalSupply', [tokens])).toSucceed();
   }
-  return send(cToken, 'harnessSetBalance', [account, tokens]);
+  return send(slToken, 'harnessSetBalance', [account, tokens]);
 }
 
-async function quickRedeem(cToken, redeemer, redeemTokens, opts = {}) {
-  await fastForward(cToken, 1);
+async function quickRedeem(slToken, redeemer, redeemTokens, opts = {}) {
+  await fastForward(slToken, 1);
 
   if (dfn(opts.supply, true)) {
-    expect(await preSupply(cToken, redeemer, redeemTokens, opts)).toSucceed();
+    expect(await preSupply(slToken, redeemer, redeemTokens, opts)).toSucceed();
   }
   if (dfn(opts.exchangeRate)) {
-    expect(await send(cToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
+    expect(await send(slToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
   }
-  return send(cToken, 'redeem', [redeemTokens], { from: redeemer });
+  return send(slToken, 'redeem', [redeemTokens], { from: redeemer });
 }
 
-async function quickRedeemUnderlying(cToken, redeemer, redeemAmount, opts = {}) {
-  await fastForward(cToken, 1);
+async function quickRedeemUnderlying(slToken, redeemer, redeemAmount, opts = {}) {
+  await fastForward(slToken, 1);
 
   if (dfn(opts.exchangeRate)) {
-    expect(await send(cToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
+    expect(await send(slToken, 'harnessSetExchangeRate', [etherMantissa(opts.exchangeRate)])).toSucceed();
   }
-  return send(cToken, 'redeemUnderlying', [redeemAmount], { from: redeemer });
+  return send(slToken, 'redeemUnderlying', [redeemAmount], { from: redeemer });
 }
 
-async function setOraclePrice(cToken, price) {
-  return send(cToken.comptroller.priceOracle, 'setUnderlyingPrice', [cToken._address, etherMantissa(price)]);
+async function setOraclePrice(slToken, price) {
+  return send(slToken.comptroller.priceOracle, 'setUnderlyingPrice', [slToken._address, etherMantissa(price)]);
 }
 
-async function setBorrowRate(cToken, rate) {
-  return send(cToken.interestRateModel, 'setBorrowRate', [etherMantissa(rate)]);
+async function setBorrowRate(slToken, rate) {
+  return send(slToken.interestRateModel, 'setBorrowRate', [etherMantissa(rate)]);
 }
 
 async function getBorrowRate(interestRateModel, cash, borrows, reserves) {
@@ -397,17 +397,17 @@ async function getSupplyRate(interestRateModel, cash, borrows, reserves, reserve
   return call(interestRateModel, 'getSupplyRate', [cash, borrows, reserves, reserveFactor].map(etherUnsigned));
 }
 
-async function pretendBorrow(cToken, borrower, accountIndex, marketIndex, principalRaw, blockNumber = 2e7) {
-  await send(cToken, 'harnessSetTotalBorrows', [etherUnsigned(principalRaw)]);
-  await send(cToken, 'harnessSetAccountBorrows', [borrower, etherUnsigned(principalRaw), etherMantissa(accountIndex)]);
-  await send(cToken, 'harnessSetBorrowIndex', [etherMantissa(marketIndex)]);
-  await send(cToken, 'harnessSetAccrualBlockNumber', [etherUnsigned(blockNumber)]);
-  await send(cToken, 'harnessSetBlockNumber', [etherUnsigned(blockNumber)]);
+async function pretendBorrow(slToken, borrower, accountIndex, marketIndex, principalRaw, blockNumber = 2e7) {
+  await send(slToken, 'harnessSetTotalBorrows', [etherUnsigned(principalRaw)]);
+  await send(slToken, 'harnessSetAccountBorrows', [borrower, etherUnsigned(principalRaw), etherMantissa(accountIndex)]);
+  await send(slToken, 'harnessSetBorrowIndex', [etherMantissa(marketIndex)]);
+  await send(slToken, 'harnessSetAccrualBlockNumber', [etherUnsigned(blockNumber)]);
+  await send(slToken, 'harnessSetBlockNumber', [etherUnsigned(blockNumber)]);
 }
 
 module.exports = {
   makeComptroller,
-  makeCToken,
+  makeSLToken,
   makeInterestRateModel,
   makePriceOracle,
   makeToken,

@@ -2,62 +2,62 @@
 Test "Borrow some WBTC enters WBTC and succeeds when not entered"
     Invariant Success
     NewComptroller price:1.0
-    NewCToken ZRX cZRX
-    NewCToken WBTC cWBTC tokenType:WBTC
-    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
-    Support cZRX collateralFactor:0.5
-    Support cWBTC collateralFactor:0.5
-    Prep Geoff Some ZRX cZRX
-    Mint Geoff 100e18 cZRX
-    EnterMarkets Geoff cZRX
-    Borrow Geoff 1e8 cWBTC
-    Assert Equal (cToken cWBTC BorrowBalance Geoff) (Exactly 1e8)
+    NewSLToken ZRX slZRX
+    NewSLToken WBTC slWBTC tokenType:WBTC
+    Give slWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support slZRX collateralFactor:0.5
+    Support slWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX slZRX
+    Mint Geoff 100e18 slZRX
+    EnterMarkets Geoff slZRX
+    Borrow Geoff 1e8 slWBTC
+    Assert Equal (slToken slWBTC BorrowBalance Geoff) (Exactly 1e8)
     Assert Equal (Erc20 WBTC TokenBalance Geoff) (Exactly 1e8)
-    Assert Equal (Erc20 WBTC TokenBalance cWBTC) (Exactly 9e8)
+    Assert Equal (Erc20 WBTC TokenBalance slWBTC) (Exactly 9e8)
 
 Test "Borrow some WBTC fails when no WBTC available"
     NewComptroller price:1.0
-    NewCToken ZRX cZRX
-    NewCToken WBTC cWBTC tokenType:WBTC
-    Support cZRX collateralFactor:0.5
-    Support cWBTC collateralFactor:0.5
-    Prep Geoff Some ZRX cZRX
-    Mint Geoff 100e18 cZRX
-    EnterMarkets Geoff cZRX cWBTC
-    Invariant Static (CToken cZRX ExchangeRateStored)
+    NewSLToken ZRX slZRX
+    NewSLToken WBTC slWBTC tokenType:WBTC
+    Support slZRX collateralFactor:0.5
+    Support slWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX slZRX
+    Mint Geoff 100e18 slZRX
+    EnterMarkets Geoff slZRX slWBTC
+    Invariant Static (SLToken slZRX ExchangeRateStored)
     AllowFailures
-    Borrow Geoff 1e8 cWBTC
+    Borrow Geoff 1e8 slWBTC
     Assert Failure TOKEN_INSUFFICIENT_CASH BORROW_CASH_NOT_AVAILABLE
 
 Test "Borrow some WBTC fails when WBTC paused"
     NewComptroller price:1.0
-    NewCToken ZRX cZRX
-    NewCToken WBTC cWBTC tokenType:WBTC
-    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
-    Support cZRX collateralFactor:0.5
-    Support cWBTC collateralFactor:0.5
-    Prep Geoff Some ZRX cZRX
-    Mint Geoff 100e18 cZRX
-    EnterMarkets Geoff cZRX cWBTC
-    Invariant Static (CToken cZRX ExchangeRateStored)
+    NewSLToken ZRX slZRX
+    NewSLToken WBTC slWBTC tokenType:WBTC
+    Give slWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support slZRX collateralFactor:0.5
+    Support slWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX slZRX
+    Mint Geoff 100e18 slZRX
+    EnterMarkets Geoff slZRX slWBTC
+    Invariant Static (SLToken slZRX ExchangeRateStored)
     Erc20 WBTC Pause
     AllowFailures
-    Borrow Geoff 1e8 cWBTC
+    Borrow Geoff 1e8 slWBTC
     Assert Revert
 
 Test "Borrow some WBTC from Excess Cash"
     Invariant Success
     NewComptroller price:1.0
-    NewCToken ZRX cZRX
-    NewCToken WBTC cWBTC tokenType:WBTC
-    Give cWBTC 10e8 WBTC -- Faucet some WBTC to borrow
-    Support cZRX collateralFactor:0.5
-    Support cWBTC collateralFactor:0.5
-    Prep Geoff Some ZRX cZRX
-    Mint Geoff 100e18 cZRX
-    EnterMarkets Geoff cZRX cWBTC
-    Borrow Geoff 1e8 cWBTC
-    EnterMarkets Geoff cZRX cWBTC
-    Assert Equal (cToken cWBTC BorrowBalance Geoff) (Exactly 1e8)
+    NewSLToken ZRX slZRX
+    NewSLToken WBTC slWBTC tokenType:WBTC
+    Give slWBTC 10e8 WBTC -- Faucet some WBTC to borrow
+    Support slZRX collateralFactor:0.5
+    Support slWBTC collateralFactor:0.5
+    Prep Geoff Some ZRX slZRX
+    Mint Geoff 100e18 slZRX
+    EnterMarkets Geoff slZRX slWBTC
+    Borrow Geoff 1e8 slWBTC
+    EnterMarkets Geoff slZRX slWBTC
+    Assert Equal (slToken slWBTC BorrowBalance Geoff) (Exactly 1e8)
     Assert Equal (Erc20 WBTC TokenBalance Geoff) (Exactly 1e8)
-    Assert Equal (Erc20 WBTC TokenBalance cWBTC) (Exactly 9e8)
+    Assert Equal (Erc20 WBTC TokenBalance slWBTC) (Exactly 9e8)

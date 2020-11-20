@@ -6,7 +6,7 @@ interface ComptrollerMethods {
   getAccountLiquidity(string): Callable<{0: number, 1: number, 2: number}>
   getHypotheticalAccountLiquidity(account: string, asset: string, redeemTokens: encodedNumber, borrowAmount: encodedNumber): Callable<{0: number, 1: number, 2: number}>
   membershipLength(string): Callable<string>
-  checkMembership(user: string, cToken: string): Callable<string>
+  checkMembership(user: string, slToken: string): Callable<string>
   getAssetsIn(string): Callable<string[]>
   admin(): Callable<string>
   oracle(): Callable<string>
@@ -45,20 +45,20 @@ interface ComptrollerMethods {
   seizeGuardianPaused(): Callable<boolean>
   mintGuardianPaused(market: string): Callable<boolean>
   borrowGuardianPaused(market: string): Callable<boolean>
-  _addCompMarkets(markets: string[]): Sendable<void>
-  _dropCompMarket(market: string): Sendable<void>
-  getCompMarkets(): Callable<string[]>
-  refreshCompSpeeds(): Sendable<void>
-  compRate(): Callable<number>
-  compSupplyState(string): Callable<string>
-  compBorrowState(string): Callable<string>
-  compAccrued(string): Callable<string>
-  compSupplierIndex(market: string, account: string): Callable<string>
-  compBorrowerIndex(market: string, account: string): Callable<string>
-  compSpeeds(string): Callable<string>
-  claimComp(string): Sendable<void>
-  _setCompRate(encodedNumber): Sendable<void>
-  _setMarketBorrowCaps(cTokens:string[], borrowCaps:encodedNumber[]): Sendable<void>
+  _addSashimiMarkets(markets: string[]): Sendable<void>
+  _dropSashimiMarket(market: string): Sendable<void>
+  getSashimiMarkets(): Callable<string[]>
+  refreshSashimiSpeeds(): Sendable<void>
+  sashimiRate(): Callable<number>
+  sashimiSupplyState(string): Callable<string>
+  sashimiBorrowState(string): Callable<string>
+  sashimiAccrued(string): Callable<string>
+  sashimiSupplierIndex(market: string, account: string): Callable<string>
+  sashimiBorrowerIndex(market: string, account: string): Callable<string>
+  sashimiSpeeds(string): Callable<string>
+  claimSashimi(string): Sendable<void>
+  _setSashimiRate(encodedNumber): Sendable<void>
+  _setMarketBorrowCaps(slTokens:string[], borrowCaps:encodedNumber[]): Sendable<void>
   _setBorrowCapGuardian(string): Sendable<void>
   borrowCapGuardian(): Callable<string>
   borrowCaps(string): Callable<string>

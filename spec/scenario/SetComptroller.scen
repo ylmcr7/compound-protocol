@@ -2,25 +2,25 @@
 
 Test "Set Comptroller"
     NewComptroller
-    NewCToken ZRX cZRX
-    Assert Equal (CToken cZRX Comptroller) (Unitroller Address)
+    NewSLToken ZRX slZRX
+    Assert Equal (SLToken slZRX Comptroller) (Unitroller Address)
     ComptrollerImpl Deploy Scenario NewComptroller
-    From Root (CToken cZRX SetComptroller (ComptrollerImpl NewComptroller Address))
+    From Root (SLToken slZRX SetComptroller (ComptrollerImpl NewComptroller Address))
     -- TODO: Fix log assertion
     -- Assert Log "NewComptroller" ("oldComptroller" (Unitroller Address)) ("newComptroller" (ComptrollerImpl NewComptroller Address))
-    Assert Equal (CToken cZRX Comptroller) (ComptrollerImpl NewComptroller Address)
+    Assert Equal (SLToken slZRX Comptroller) (ComptrollerImpl NewComptroller Address)
 
 Test "Fail when is not a comptroller"
     NewComptroller
-    NewCToken ZRX cZRX
-    Invariant Remains (CToken cZRX Comptroller) (Unitroller Address)
+    NewSLToken ZRX slZRX
+    Invariant Remains (SLToken slZRX Comptroller) (Unitroller Address)
     AllowFailures
-    From Root (CToken cZRX SetComptroller (PriceOracle Address))
+    From Root (SLToken slZRX SetComptroller (PriceOracle Address))
     Assert Revert
 
 Test "Fail to set comptroller as not admin"
     NewComptroller
-    NewCToken ZRX cZRX
+    NewSLToken ZRX slZRX
     AllowFailures
-    From Geoff (CToken cZRX SetComptroller (PriceOracle Address))
+    From Geoff (SLToken slZRX SetComptroller (PriceOracle Address))
     Assert Failure UNAUTHORIZED SET_COMPTROLLER_OWNER_CHECK
