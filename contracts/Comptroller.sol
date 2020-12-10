@@ -11,7 +11,6 @@ import "./EIP20Interface.sol";
 
 /**
  * @title SashimiLending's Comptroller Contract
- * @author SashimiLending
  */
 contract Comptroller is ComptrollerV4Storage, ComptrollerInterface, ComptrollerErrorReporter, Exponential {
     /// @notice Emitted when an admin supports a market
@@ -1430,6 +1429,6 @@ contract Comptroller is ComptrollerV4Storage, ComptrollerInterface, ComptrollerE
      * @return The address of SASHIMI
      */
     function getSashimiAddress() public view returns (address) {
-        return 0x4986843fde2b0dae6bDc54c8E16567614ea8786f;
+        return 0xC28E27870558cF22ADD83540d2126da2e4b464c2;
     }
 }
