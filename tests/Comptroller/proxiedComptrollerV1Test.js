@@ -1,6 +1,6 @@
 const { address, etherMantissa } = require('../Utils/Ethereum');
 
-const { makeComptroller, makeCToken, makePriceOracle } = require('../Utils/Compound');
+const { makeComptroller, makeSLToken, makePriceOracle } = require('../Utils/SashimiLending');
 
 describe('ComptrollerV1', function() {
   let root, accounts;
@@ -30,11 +30,11 @@ describe('ComptrollerV1', function() {
   describe('delegating to comptroller v1', () => {
     const closeFactor = etherMantissa(0.051);
     const maxAssets = 10;
-    let unitrollerAsComptroller, cToken;
+    let unitrollerAsComptroller, slToken;
 
     beforeEach(async () => {
       unitrollerAsComptroller = await initializeBrains(oracle, etherMantissa(0.06), 30);
-      cToken = await makeCToken({ comptroller: unitrollerAsComptroller });
+      slToken = await makeSLToken({ comptroller: unitrollerAsComptroller });
     });
 
     describe('becoming brains sets initial state', () => {
@@ -95,7 +95,7 @@ describe('ComptrollerV1', function() {
 
       it('fails if not called by admin', async () => {
         expect(
-          await send(unitrollerAsComptroller, '_setCollateralFactor', [cToken._address, half], {
+          await send(unitrollerAsComptroller, '_setCollateralFactor', [slToken._address, half], {
             from: accounts[1]
           })
         ).toHaveTrollFailure('UNAUTHORIZED', 'SET_COLLATERAL_FACTOR_OWNER_CHECK');
@@ -103,31 +103,31 @@ describe('ComptrollerV1', function() {
 
       it('fails if asset is not listed', async () => {
         expect(
-          await send(unitrollerAsComptroller, '_setCollateralFactor', [cToken._address, half])
+          await send(unitrollerAsComptroller, '_setCollateralFactor', [slToken._address, half])
         ).toHaveTrollFailure('MARKET_NOT_LISTED', 'SET_COLLATERAL_FACTOR_NO_EXISTS');
       });
 
       it('fails if factor is too high', async () => {
-        const cToken = await makeCToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
+        const slToken = await makeSLToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
         expect(
-          await send(unitrollerAsComptroller, '_setCollateralFactor', [cToken._address, one])
+          await send(unitrollerAsComptroller, '_setCollateralFactor', [slToken._address, one])
         ).toHaveTrollFailure('INVALID_COLLATERAL_FACTOR', 'SET_COLLATERAL_FACTOR_VALIDATION');
       });
 
       it('fails if factor is set without an underlying price', async () => {
-        const cToken = await makeCToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
+        const slToken = await makeSLToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
         expect(
-          await send(unitrollerAsComptroller, '_setCollateralFactor', [cToken._address, half])
+          await send(unitrollerAsComptroller, '_setCollateralFactor', [slToken._address, half])
         ).toHaveTrollFailure('PRICE_ERROR', 'SET_COLLATERAL_FACTOR_WITHOUT_PRICE');
       });
 
       it('succeeds and sets market', async () => {
-        const cToken = await makeCToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
-        await send(oracle, 'setUnderlyingPrice', [cToken._address, 1]);
+        const slToken = await makeSLToken({ supportMarket: true, comptroller: unitrollerAsComptroller });
+        await send(oracle, 'setUnderlyingPrice', [slToken._address, 1]);
         expect(
-          await send(unitrollerAsComptroller, '_setCollateralFactor', [cToken._address, half])
+          await send(unitrollerAsComptroller, '_setCollateralFactor', [slToken._address, half])
         ).toHaveLog('NewCollateralFactor', {
-          cToken: cToken._address,
+          slToken: slToken._address,
           oldCollateralFactorMantissa: '0',
           newCollateralFactorMantissa: half.toString()
         });
@@ -137,34 +137,34 @@ describe('ComptrollerV1', function() {
     describe('_supportMarket', () => {
       it('fails if not called by admin', async () => {
         expect(
-          await send(unitrollerAsComptroller, '_supportMarket', [cToken._address], { from: accounts[1] })
+          await send(unitrollerAsComptroller, '_supportMarket', [slToken._address], { from: accounts[1] })
         ).toHaveTrollFailure('UNAUTHORIZED', 'SUPPORT_MARKET_OWNER_CHECK');
       });
 
-      it('fails if asset is not a CToken', async () => {
-        const notACToken = await makePriceOracle();
-        await expect(send(unitrollerAsComptroller, '_supportMarket', [notACToken._address])).rejects.toRevert();
+      it('fails if asset is not a SLToken', async () => {
+        const notASLToken = await makePriceOracle();
+        await expect(send(unitrollerAsComptroller, '_supportMarket', [notASLToken._address])).rejects.toRevert();
       });
 
       it('succeeds and sets market', async () => {
-        const result = await send(unitrollerAsComptroller, '_supportMarket', [cToken._address]);
-        expect(result).toHaveLog('MarketListed', { cToken: cToken._address });
+        const result = await send(unitrollerAsComptroller, '_supportMarket', [slToken._address]);
+        expect(result).toHaveLog('MarketListed', { slToken: slToken._address });
       });
 
       it('cannot list a market a second time', async () => {
-        const result1 = await send(unitrollerAsComptroller, '_supportMarket', [cToken._address]);
-        const result2 = await send(unitrollerAsComptroller, '_supportMarket', [cToken._address]);
-        expect(result1).toHaveLog('MarketListed', { cToken: cToken._address });
+        const result1 = await send(unitrollerAsComptroller, '_supportMarket', [slToken._address]);
+        const result2 = await send(unitrollerAsComptroller, '_supportMarket', [slToken._address]);
+        expect(result1).toHaveLog('MarketListed', { slToken: slToken._address });
         expect(result2).toHaveTrollFailure('MARKET_ALREADY_LISTED', 'SUPPORT_MARKET_EXISTS');
       });
 
       it('can list two different markets', async () => {
-        const cToken1 = await makeCToken({ comptroller: unitroller });
-        const cToken2 = await makeCToken({ comptroller: unitroller });
-        const result1 = await send(unitrollerAsComptroller, '_supportMarket', [cToken1._address]);
-        const result2 = await send(unitrollerAsComptroller, '_supportMarket', [cToken2._address]);
-        expect(result1).toHaveLog('MarketListed', { cToken: cToken1._address });
-        expect(result2).toHaveLog('MarketListed', { cToken: cToken2._address });
+        const slToken1 = await makeSLToken({ comptroller: unitroller });
+        const slToken2 = await makeSLToken({ comptroller: unitroller });
+        const result1 = await send(unitrollerAsComptroller, '_supportMarket', [slToken1._address]);
+        const result2 = await send(unitrollerAsComptroller, '_supportMarket', [slToken2._address]);
+        expect(result1).toHaveLog('MarketListed', { slToken: slToken1._address });
+        expect(result2).toHaveLog('MarketListed', { slToken: slToken2._address });
       });
     });
   });

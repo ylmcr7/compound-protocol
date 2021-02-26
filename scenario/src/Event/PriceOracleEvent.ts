@@ -39,11 +39,11 @@ async function setPriceOracleFn(world: World, params: Event): Promise<World> {
   return nextWorld;
 }
 
-async function setPrice(world: World, from: string, priceOracle: PriceOracle, cToken: string, amount: NumberV): Promise<World> {
+async function setPrice(world: World, from: string, priceOracle: PriceOracle, slToken: string, amount: NumberV): Promise<World> {
   return addAction(
     world,
-    `Set price oracle price for ${cToken} to ${amount.show()}`,
-    await invoke(world, priceOracle.methods.setUnderlyingPrice(cToken, amount.encode()), from)
+    `Set price oracle price for ${slToken} to ${amount.show()}`,
+    await invoke(world, priceOracle.methods.setUnderlyingPrice(slToken, amount.encode()), from)
   );
 }
 
@@ -94,25 +94,25 @@ export function priceOracleCommands() {
       (world, from, {params}) => setPriceOracleFn(world, params.val)
     ),
 
-    new Command<{priceOracle: PriceOracle, cToken: AddressV, amount: NumberV}>(`
+    new Command<{priceOracle: PriceOracle, slToken: AddressV, amount: NumberV}>(`
         #### SetPrice
 
-        * "SetPrice <CToken> <Amount>" - Sets the per-ether price for the given cToken
-          * E.g. "PriceOracle SetPrice cZRX 1.0"
+        * "SetPrice <SLToken> <Amount>" - Sets the per-ether price for the given slToken
+          * E.g. "PriceOracle SetPrice slZRX 1.0"
       `,
       "SetPrice",
       [
         new Arg("priceOracle", getPriceOracle, {implicit: true}),
-        new Arg("cToken", getAddressV),
+        new Arg("slToken", getAddressV),
         new Arg("amount", getExpNumberV)
       ],
-      (world, from, {priceOracle, cToken, amount}) => setPrice(world, from, priceOracle, cToken.val, amount)
+      (world, from, {priceOracle, slToken, amount}) => setPrice(world, from, priceOracle, slToken.val, amount)
     ),
 
     new Command<{priceOracle: PriceOracle, address: AddressV, amount: NumberV}>(`
         #### SetDirectPrice
 
-        * "SetDirectPrice <Address> <Amount>" - Sets the per-ether price for the given cToken
+        * "SetDirectPrice <Address> <Amount>" - Sets the per-ether price for the given slToken
           * E.g. "PriceOracle SetDirectPrice (Address Zero) 1.0"
       `,
       "SetDirectPrice",

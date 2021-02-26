@@ -4,19 +4,19 @@ import "../../contracts/Comptroller.sol";
 import "../../contracts/PriceOracle.sol";
 
 contract ComptrollerKovan is Comptroller {
-  function getCompAddress() public view returns (address) {
+  function getSashimiAddress() public view returns (address) {
     return 0x61460874a7196d6a22D1eE4922473664b3E95270;
   }
 }
 
 contract ComptrollerRopsten is Comptroller {
-  function getCompAddress() public view returns (address) {
+  function getSashimiAddress() public view returns (address) {
     return 0x1Fe16De955718CFAb7A44605458AB023838C2793;
   }
 }
 
 contract ComptrollerHarness is Comptroller {
-    address compAddress;
+    address sashimiAddress;
     uint public blockNumber;
 
     constructor() Comptroller() public {}
@@ -25,58 +25,58 @@ contract ComptrollerHarness is Comptroller {
         pauseGuardian = harnessedPauseGuardian;
     }
 
-    function setCompSupplyState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compSupplyState[cToken].index = index;
-        compSupplyState[cToken].block = blockNumber_;
+    function setSashimiSupplyState(address slToken, uint224 index, uint32 blockNumber_) public {
+        sashimiSupplyState[slToken].index = index;
+        sashimiSupplyState[slToken].block = blockNumber_;
     }
 
-    function setCompBorrowState(address cToken, uint224 index, uint32 blockNumber_) public {
-        compBorrowState[cToken].index = index;
-        compBorrowState[cToken].block = blockNumber_;
+    function setSashimiBorrowState(address slToken, uint224 index, uint32 blockNumber_) public {
+        sashimiBorrowState[slToken].index = index;
+        sashimiBorrowState[slToken].block = blockNumber_;
     }
 
-    function setCompAccrued(address user, uint userAccrued) public {
-        compAccrued[user] = userAccrued;
+    function setSashimiAccrued(address user, uint userAccrued) public {
+        sashimiAccrued[user] = userAccrued;
     }
 
-    function setCompAddress(address compAddress_) public {
-        compAddress = compAddress_;
+    function setSashimiAddress(address sashimiAddress_) public {
+        sashimiAddress = sashimiAddress_;
     }
 
-    function getCompAddress() public view returns (address) {
-        return compAddress;
+    function getSashimiAddress() public view returns (address) {
+        return sashimiAddress;
     }
 
-    function setCompSpeed(address cToken, uint compSpeed) public {
-        compSpeeds[cToken] = compSpeed;
+    function setSashimiSpeed(address slToken, uint sashimiSpeed) public {
+        sashimiSpeeds[slToken] = sashimiSpeed;
     }
 
-    function setCompBorrowerIndex(address cToken, address borrower, uint index) public {
-        compBorrowerIndex[cToken][borrower] = index;
+    function setSashimiBorrowerIndex(address slToken, address borrower, uint index) public {
+        sashimiBorrowerIndex[slToken][borrower] = index;
     }
 
-    function setCompSupplierIndex(address cToken, address supplier, uint index) public {
-        compSupplierIndex[cToken][supplier] = index;
+    function setSashimiSupplierIndex(address slToken, address supplier, uint index) public {
+        sashimiSupplierIndex[slToken][supplier] = index;
     }
 
-    function harnessUpdateCompBorrowIndex(address cToken, uint marketBorrowIndexMantissa) public {
-        updateCompBorrowIndex(cToken, Exp({mantissa: marketBorrowIndexMantissa}));
+    function harnessUpdateSashimiBorrowIndex(address slToken, uint marketBorrowIndexMantissa) public {
+        updateSashimiBorrowIndex(slToken, Exp({mantissa: marketBorrowIndexMantissa}));
     }
 
-    function harnessUpdateCompSupplyIndex(address cToken) public {
-        updateCompSupplyIndex(cToken);
+    function harnessUpdateSashimiSupplyIndex(address slToken) public {
+        updateSashimiSupplyIndex(slToken);
     }
 
-    function harnessDistributeBorrowerComp(address cToken, address borrower, uint marketBorrowIndexMantissa) public {
-        distributeBorrowerComp(cToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
+    function harnessDistributeBorrowerSashimi(address slToken, address borrower, uint marketBorrowIndexMantissa) public {
+        distributeBorrowerSashimi(slToken, borrower, Exp({mantissa: marketBorrowIndexMantissa}), false);
     }
 
-    function harnessDistributeSupplierComp(address cToken, address supplier) public {
-        distributeSupplierComp(cToken, supplier, false);
+    function harnessDistributeSupplierSashimi(address slToken, address supplier) public {
+        distributeSupplierSashimi(slToken, supplier, false);
     }
 
-    function harnessTransferComp(address user, uint userAccrued, uint threshold) public returns (uint) {
-        return transferComp(user, userAccrued, threshold);
+    function harnessTransferSashimi(address user, uint userAccrued, uint threshold) public returns (uint) {
+        return transferSashimi(user, userAccrued, threshold);
     }
 
     function harnessFastForward(uint blocks) public returns (uint) {
@@ -92,23 +92,23 @@ contract ComptrollerHarness is Comptroller {
         return blockNumber;
     }
 
-    function getCompMarkets() public view returns (address[] memory) {
+    function getSashimiMarkets() public view returns (address[] memory) {
         uint m = allMarkets.length;
         uint n = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
+            if (markets[address(allMarkets[i])].isSashimied) {
                 n++;
             }
         }
 
-        address[] memory compMarkets = new address[](n);
+        address[] memory sashimiMarkets = new address[](n);
         uint k = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
-                compMarkets[k++] = address(allMarkets[i]);
+            if (markets[address(allMarkets[i])].isSashimied) {
+                sashimiMarkets[k++] = address(allMarkets[i]);
             }
         }
-        return compMarkets;
+        return sashimiMarkets;
     }
 }
 
@@ -149,69 +149,69 @@ contract BoolComptroller is ComptrollerInterface {
 
     /*** Assets You Are In ***/
 
-    function enterMarkets(address[] calldata _cTokens) external returns (uint[] memory) {
-        _cTokens;
+    function enterMarkets(address[] calldata _slTokens) external returns (uint[] memory) {
+        _slTokens;
         uint[] memory ret;
         return ret;
     }
 
-    function exitMarket(address _cToken) external returns (uint) {
-        _cToken;
+    function exitMarket(address _slToken) external returns (uint) {
+        _slToken;
         return noError;
     }
 
     /*** Policy Hooks ***/
 
-    function mintAllowed(address _cToken, address _minter, uint _mintAmount) public returns (uint) {
-        _cToken;
+    function mintAllowed(address _slToken, address _minter, uint _mintAmount) public returns (uint) {
+        _slToken;
         _minter;
         _mintAmount;
         return allowMint ? noError : opaqueError;
     }
 
-    function mintVerify(address _cToken, address _minter, uint _mintAmount, uint _mintTokens) external {
-        _cToken;
+    function mintVerify(address _slToken, address _minter, uint _mintAmount, uint _mintTokens) external {
+        _slToken;
         _minter;
         _mintAmount;
         _mintTokens;
         require(verifyMint, "mintVerify rejected mint");
     }
 
-    function redeemAllowed(address _cToken, address _redeemer, uint _redeemTokens) public returns (uint) {
-        _cToken;
+    function redeemAllowed(address _slToken, address _redeemer, uint _redeemTokens) public returns (uint) {
+        _slToken;
         _redeemer;
         _redeemTokens;
         return allowRedeem ? noError : opaqueError;
     }
 
-    function redeemVerify(address _cToken, address _redeemer, uint _redeemAmount, uint _redeemTokens) external {
-        _cToken;
+    function redeemVerify(address _slToken, address _redeemer, uint _redeemAmount, uint _redeemTokens) external {
+        _slToken;
         _redeemer;
         _redeemAmount;
         _redeemTokens;
         require(verifyRedeem, "redeemVerify rejected redeem");
     }
 
-    function borrowAllowed(address _cToken, address _borrower, uint _borrowAmount) public returns (uint) {
-        _cToken;
+    function borrowAllowed(address _slToken, address _borrower, uint _borrowAmount) public returns (uint) {
+        _slToken;
         _borrower;
         _borrowAmount;
         return allowBorrow ? noError : opaqueError;
     }
 
-    function borrowVerify(address _cToken, address _borrower, uint _borrowAmount) external {
-        _cToken;
+    function borrowVerify(address _slToken, address _borrower, uint _borrowAmount) external {
+        _slToken;
         _borrower;
         _borrowAmount;
         require(verifyBorrow, "borrowVerify rejected borrow");
     }
 
     function repayBorrowAllowed(
-        address _cToken,
+        address _slToken,
         address _payer,
         address _borrower,
         uint _repayAmount) public returns (uint) {
-        _cToken;
+        _slToken;
         _payer;
         _borrower;
         _repayAmount;
@@ -219,12 +219,12 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function repayBorrowVerify(
-        address _cToken,
+        address _slToken,
         address _payer,
         address _borrower,
         uint _repayAmount,
         uint _borrowerIndex) external {
-        _cToken;
+        _slToken;
         _payer;
         _borrower;
         _repayAmount;
@@ -233,13 +233,13 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function liquidateBorrowAllowed(
-        address _cTokenBorrowed,
-        address _cTokenCollateral,
+        address _slTokenBorrowed,
+        address _slTokenCollateral,
         address _liquidator,
         address _borrower,
         uint _repayAmount) public returns (uint) {
-        _cTokenBorrowed;
-        _cTokenCollateral;
+        _slTokenBorrowed;
+        _slTokenCollateral;
         _liquidator;
         _borrower;
         _repayAmount;
@@ -247,14 +247,14 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function liquidateBorrowVerify(
-        address _cTokenBorrowed,
-        address _cTokenCollateral,
+        address _slTokenBorrowed,
+        address _slTokenCollateral,
         address _liquidator,
         address _borrower,
         uint _repayAmount,
         uint _seizeTokens) external {
-        _cTokenBorrowed;
-        _cTokenCollateral;
+        _slTokenBorrowed;
+        _slTokenCollateral;
         _liquidator;
         _borrower;
         _repayAmount;
@@ -263,13 +263,13 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function seizeAllowed(
-        address _cTokenCollateral,
-        address _cTokenBorrowed,
+        address _slTokenCollateral,
+        address _slTokenBorrowed,
         address _borrower,
         address _liquidator,
         uint _seizeTokens) public returns (uint) {
-        _cTokenCollateral;
-        _cTokenBorrowed;
+        _slTokenCollateral;
+        _slTokenBorrowed;
         _liquidator;
         _borrower;
         _seizeTokens;
@@ -277,13 +277,13 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function seizeVerify(
-        address _cTokenCollateral,
-        address _cTokenBorrowed,
+        address _slTokenCollateral,
+        address _slTokenBorrowed,
         address _liquidator,
         address _borrower,
         uint _seizeTokens) external {
-        _cTokenCollateral;
-        _cTokenBorrowed;
+        _slTokenCollateral;
+        _slTokenBorrowed;
         _liquidator;
         _borrower;
         _seizeTokens;
@@ -291,11 +291,11 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function transferAllowed(
-        address _cToken,
+        address _slToken,
         address _src,
         address _dst,
         uint _transferTokens) public returns (uint) {
-        _cToken;
+        _slToken;
         _src;
         _dst;
         _transferTokens;
@@ -303,11 +303,11 @@ contract BoolComptroller is ComptrollerInterface {
     }
 
     function transferVerify(
-        address _cToken,
+        address _slToken,
         address _src,
         address _dst,
         uint _transferTokens) external {
-        _cToken;
+        _slToken;
         _src;
         _dst;
         _transferTokens;
@@ -317,11 +317,11 @@ contract BoolComptroller is ComptrollerInterface {
     /*** Special Liquidation Calculation ***/
 
     function liquidateCalculateSeizeTokens(
-        address _cTokenBorrowed,
-        address _cTokenCollateral,
+        address _slTokenBorrowed,
+        address _slTokenCollateral,
         uint _repayAmount) public view returns (uint, uint) {
-        _cTokenBorrowed;
-        _cTokenCollateral;
+        _slTokenBorrowed;
+        _slTokenCollateral;
         _repayAmount;
         return failCalculateSeizeTokens ? (opaqueError, 0) : (noError, calculatedSeizeTokens);
     }

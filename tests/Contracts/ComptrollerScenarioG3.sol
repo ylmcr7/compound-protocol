@@ -4,20 +4,20 @@ import "../../contracts/ComptrollerG3.sol";
 
 contract ComptrollerScenarioG3 is ComptrollerG3 {
     uint public blockNumber;
-    address public compAddress;
+    address public sashimiAddress;
 
     constructor() ComptrollerG3() public {}
 
-    function setCompAddress(address compAddress_) public {
-        compAddress = compAddress_;
+    function setSashimiAddress(address sashimiAddress_) public {
+        sashimiAddress = sashimiAddress_;
     }
 
-    function getCompAddress() public view returns (address) {
-        return compAddress;
+    function getSashimiAddress() public view returns (address) {
+        return sashimiAddress;
     }
 
-    function membershipLength(CToken cToken) public view returns (uint) {
-        return accountAssets[address(cToken)].length;
+    function membershipLength(SLToken slToken) public view returns (uint) {
+        return accountAssets[address(slToken)].length;
     }
 
     function fastForward(uint blocks) public returns (uint) {
@@ -34,26 +34,26 @@ contract ComptrollerScenarioG3 is ComptrollerG3 {
         return blockNumber;
     }
 
-    function getCompMarkets() public view returns (address[] memory) {
+    function getSashimiMarkets() public view returns (address[] memory) {
         uint m = allMarkets.length;
         uint n = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
+            if (markets[address(allMarkets[i])].isSashimied) {
                 n++;
             }
         }
 
-        address[] memory compMarkets = new address[](n);
+        address[] memory sashimiMarkets = new address[](n);
         uint k = 0;
         for (uint i = 0; i < m; i++) {
-            if (markets[address(allMarkets[i])].isComped) {
-                compMarkets[k++] = address(allMarkets[i]);
+            if (markets[address(allMarkets[i])].isSashimied) {
+                sashimiMarkets[k++] = address(allMarkets[i]);
             }
         }
-        return compMarkets;
+        return sashimiMarkets;
     }
 
-    function unlist(CToken cToken) public {
-        markets[address(cToken)].isListed = false;
+    function unlist(SLToken slToken) public {
+        markets[address(slToken)].isListed = false;
     }
 }

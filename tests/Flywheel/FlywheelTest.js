@@ -1,11 +1,11 @@
 const {
   makeComptroller,
-  makeCToken,
+  makeSLToken,
   balanceOf,
   fastForward,
   pretendBorrow,
   quickMint
-} = require('../Utils/Compound');
+} = require('../Utils/SashimiLending');
 const {
   etherExp,
   etherDouble,
@@ -13,48 +13,48 @@ const {
   etherMantissa
 } = require('../Utils/Ethereum');
 
-const compRate = etherUnsigned(1e18);
+const sashimiRate = etherUnsigned(1e18);
 
-async function compAccrued(comptroller, user) {
-  return etherUnsigned(await call(comptroller, 'compAccrued', [user]));
+async function sashimiAccrued(comptroller, user) {
+  return etherUnsigned(await call(comptroller, 'sashimiAccrued', [user]));
 }
 
-async function compBalance(comptroller, user) {
-  return etherUnsigned(await call(comptroller.comp, 'balanceOf', [user]))
+async function sashimiBalance(comptroller, user) {
+  return etherUnsigned(await call(comptroller.sashimi, 'balanceOf', [user]))
 }
 
-async function totalCompAccrued(comptroller, user) {
-  return (await compAccrued(comptroller, user)).add(await compBalance(comptroller, user));
+async function totalSashimiAccrued(comptroller, user) {
+  return (await sashimiAccrued(comptroller, user)).add(await sashimiBalance(comptroller, user));
 }
 
 describe('Flywheel upgrade', () => {
   describe('becomes the comptroller', () => {
-    it('adds the comp markets', async () => {
+    it('adds the sashimi markets', async () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
-      let compMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+      let sashimiMarkets = await Promise.all([1, 2, 3].map(async _ => {
+        return makeSLToken({comptroller: unitroller, supportMarket: true});
       }));
-      compMarkets = compMarkets.map(c => c._address);
-      unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, compMarkets});
-      expect(await call(unitroller, 'getCompMarkets')).toEqual(compMarkets);
+      sashimiMarkets = sashimiMarkets.map(c => c._address);
+      unitroller = await makeComptroller({kind: 'unitroller-g3', unitroller, sashimiMarkets});
+      expect(await call(unitroller, 'getSashimiMarkets')).toEqual(sashimiMarkets);
     });
 
     it('adds the other markets', async () => {
       let root = saddle.accounts[0];
       let unitroller = await makeComptroller({kind: 'unitroller-g2'});
       let allMarkets = await Promise.all([1, 2, 3].map(async _ => {
-        return makeCToken({comptroller: unitroller, supportMarket: true});
+        return makeSLToken({comptroller: unitroller, supportMarket: true});
       }));
       allMarkets = allMarkets.map(c => c._address);
       unitroller = await makeComptroller({
         kind: 'unitroller-g3',
         unitroller,
-        compMarkets: allMarkets.slice(0, 1),
+        sashimiMarkets: allMarkets.slice(0, 1),
         otherMarkets: allMarkets.slice(1)
       });
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets);
-      expect(await call(unitroller, 'getCompMarkets')).toEqual(allMarkets.slice(0, 1));
+      expect(await call(unitroller, 'getSashimiMarkets')).toEqual(allMarkets.slice(0, 1));
     });
 
     it('_supportMarket() adds to all markets, and only once', async () => {
@@ -62,7 +62,7 @@ describe('Flywheel upgrade', () => {
       let unitroller = await makeComptroller({kind: 'unitroller-g3'});
       let allMarkets = [];
       for (let _ of Array(10)) {
-        allMarkets.push(await makeCToken({comptroller: unitroller, supportMarket: true}));
+        allMarkets.push(await makeSLToken({comptroller: unitroller, supportMarket: true}));
       }
       expect(await call(unitroller, 'getAllMarkets')).toEqual(allMarkets.map(c => c._address));
       expect(
@@ -78,33 +78,33 @@ describe('Flywheel upgrade', () => {
 
 describe('Flywheel', () => {
   let root, a1, a2, a3, accounts;
-  let comptroller, cLOW, cREP, cZRX, cEVIL;
+  let comptroller, slLOW, slREP, slZRX, cEVIL;
   beforeEach(async () => {
     let interestRateModelOpts = {borrowRate: 0.000001};
     [root, a1, a2, a3, ...accounts] = saddle.accounts;
     comptroller = await makeComptroller();
-    cLOW = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 1, interestRateModelOpts});
-    cREP = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
-    cZRX = await makeCToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
-    cEVIL = await makeCToken({comptroller, supportMarket: false, underlyingPrice: 3, interestRateModelOpts});
-    await send(comptroller, '_addCompMarkets', [[cLOW, cREP, cZRX].map(c => c._address)]);
+    slLOW = await makeSLToken({comptroller, supportMarket: true, underlyingPrice: 1, interestRateModelOpts});
+    slREP = await makeSLToken({comptroller, supportMarket: true, underlyingPrice: 2, interestRateModelOpts});
+    slZRX = await makeSLToken({comptroller, supportMarket: true, underlyingPrice: 3, interestRateModelOpts});
+    cEVIL = await makeSLToken({comptroller, supportMarket: false, underlyingPrice: 3, interestRateModelOpts});
+    await send(comptroller, '_addSashimiMarkets', [[slLOW, slREP, slZRX].map(c => c._address)]);
   });
 
-  describe('getCompMarkets()', () => {
-    it('should return the comp markets', async () => {
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cLOW, cREP, cZRX].map((c) => c._address)
+  describe('getSashimiMarkets()', () => {
+    it('should return the sashimi markets', async () => {
+      expect(await call(comptroller, 'getSashimiMarkets')).toEqual(
+        [slLOW, slREP, slZRX].map((c) => c._address)
       );
     });
   });
 
-  describe('updateCompBorrowIndex()', () => {
-    it('should calculate comp borrower index correctly', async () => {
-      const mkt = cREP;
+  describe('updateSashimiBorrowIndex()', () => {
+    it('should calculate sashimi borrower index correctly', async () => {
+      const mkt = slREP;
       await send(comptroller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalBorrows', [etherUnsigned(11e18)]);
-      await send(comptroller, 'setCompSpeed', [mkt._address, etherExp(0.5)]);
-      await send(comptroller, 'harnessUpdateCompBorrowIndex', [
+      await send(comptroller, 'setSashimiSpeed', [mkt._address, etherExp(0.5)]);
+      await send(comptroller, 'harnessUpdateSashimiBorrowIndex', [
         mkt._address,
         etherExp(1.1),
       ]);
@@ -113,146 +113,146 @@ describe('Flywheel', () => {
 
         borrowAmt   = totalBorrows * 1e18 / borrowIdx
                     = 11e18 * 1e18 / 1.1e18 = 10e18
-        compAccrued = deltaBlocks * borrowSpeed
+        sashimiAccrued = deltaBlocks * borrowSpeed
                     = 100 * 0.5e18 = 50e18
-        newIndex   += 1e36 + compAccrued * 1e36 / borrowAmt
+        newIndex   += 1e36 + sashimiAccrued * 1e36 / borrowAmt
                     = 1e36 + 50e18 * 1e36 / 10e18 = 6e36
       */
 
-      const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiBorrowState', [mkt._address]);
       expect(index).toEqualNumber(6e36);
       expect(block).toEqualNumber(100);
     });
 
-    it('should not revert or update compBorrowState index if cToken not in COMP markets', async () => {
-      const mkt = await makeCToken({
+    it('should not revert or update sashimiBorrowState index if slToken not in SASHIMI markets', async () => {
+      const mkt = await makeSLToken({
         comptroller: comptroller,
         supportMarket: true,
-        addCompMarket: false,
+        addSashimiMarket: false,
       });
       await send(comptroller, 'setBlockNumber', [100]);
-      await send(comptroller, 'harnessUpdateCompBorrowIndex', [
+      await send(comptroller, 'harnessUpdateSashimiBorrowIndex', [
         mkt._address,
         etherExp(1.1),
       ]);
 
-      const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiBorrowState', [mkt._address]);
       expect(index).toEqualNumber(0);
       expect(block).toEqualNumber(100);
-      const speed = await call(comptroller, 'compSpeeds', [mkt._address]);
+      const speed = await call(comptroller, 'sashimiSpeeds', [mkt._address]);
       expect(speed).toEqualNumber(0);
     });
 
     it('should not update index if no blocks passed since last accrual', async () => {
-      const mkt = cREP;
-      await send(comptroller, 'setCompSpeed', [mkt._address, etherExp(0.5)]);
-      await send(comptroller, 'harnessUpdateCompBorrowIndex', [
+      const mkt = slREP;
+      await send(comptroller, 'setSashimiSpeed', [mkt._address, etherExp(0.5)]);
+      await send(comptroller, 'harnessUpdateSashimiBorrowIndex', [
         mkt._address,
         etherExp(1.1),
       ]);
 
-      const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiBorrowState', [mkt._address]);
       expect(index).toEqualNumber(1e36);
       expect(block).toEqualNumber(0);
     });
 
-    it('should not update index if comp speed is 0', async () => {
-      const mkt = cREP;
-      await send(comptroller, 'setCompSpeed', [mkt._address, etherExp(0)]);
+    it('should not update index if sashimi speed is 0', async () => {
+      const mkt = slREP;
+      await send(comptroller, 'setSashimiSpeed', [mkt._address, etherExp(0)]);
       await send(comptroller, 'setBlockNumber', [100]);
-      await send(comptroller, 'harnessUpdateCompBorrowIndex', [
+      await send(comptroller, 'harnessUpdateSashimiBorrowIndex', [
         mkt._address,
         etherExp(1.1),
       ]);
 
-      const {index, block} = await call(comptroller, 'compBorrowState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiBorrowState', [mkt._address]);
       expect(index).toEqualNumber(1e36);
       expect(block).toEqualNumber(100);
     });
   });
 
-  describe('updateCompSupplyIndex()', () => {
-    it('should calculate comp supplier index correctly', async () => {
-      const mkt = cREP;
+  describe('updateSashimiSupplyIndex()', () => {
+    it('should calculate sashimi supplier index correctly', async () => {
+      const mkt = slREP;
       await send(comptroller, 'setBlockNumber', [100]);
       await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
-      await send(comptroller, 'setCompSpeed', [mkt._address, etherExp(0.5)]);
-      await send(comptroller, 'harnessUpdateCompSupplyIndex', [mkt._address]);
+      await send(comptroller, 'setSashimiSpeed', [mkt._address, etherExp(0.5)]);
+      await send(comptroller, 'harnessUpdateSashimiSupplyIndex', [mkt._address]);
       /*
         suppyTokens = 10e18
-        compAccrued = deltaBlocks * supplySpeed
+        sashimiAccrued = deltaBlocks * supplySpeed
                     = 100 * 0.5e18 = 50e18
-        newIndex   += compAccrued * 1e36 / supplyTokens
+        newIndex   += sashimiAccrued * 1e36 / supplyTokens
                     = 1e36 + 50e18 * 1e36 / 10e18 = 6e36
       */
-      const {index, block} = await call(comptroller, 'compSupplyState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiSupplyState', [mkt._address]);
       expect(index).toEqualNumber(6e36);
       expect(block).toEqualNumber(100);
     });
 
-    it('should not update index on non-COMP markets', async () => {
-      const mkt = await makeCToken({
+    it('should not update index on non-SASHIMI markets', async () => {
+      const mkt = await makeSLToken({
         comptroller: comptroller,
         supportMarket: true,
-        addCompMarket: false
+        addSashimiMarket: false
       });
       await send(comptroller, 'setBlockNumber', [100]);
-      await send(comptroller, 'harnessUpdateCompSupplyIndex', [
+      await send(comptroller, 'harnessUpdateSashimiSupplyIndex', [
         mkt._address
       ]);
 
-      const {index, block} = await call(comptroller, 'compSupplyState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiSupplyState', [mkt._address]);
       expect(index).toEqualNumber(0);
       expect(block).toEqualNumber(100);
-      const speed = await call(comptroller, 'compSpeeds', [mkt._address]);
+      const speed = await call(comptroller, 'sashimiSpeeds', [mkt._address]);
       expect(speed).toEqualNumber(0);
-      // ctoken could have no comp speed or comp supplier state if not in comp markets
+      // sltoken could have no sashimi speed or sashimi supplier state if not in sashimi markets
       // this logic could also possibly be implemented in the allowed hook
     });
 
     it('should not update index if no blocks passed since last accrual', async () => {
-      const mkt = cREP;
+      const mkt = slREP;
       await send(comptroller, 'setBlockNumber', [0]);
       await send(mkt, 'harnessSetTotalSupply', [etherUnsigned(10e18)]);
-      await send(comptroller, 'setCompSpeed', [mkt._address, etherExp(0.5)]);
-      await send(comptroller, 'harnessUpdateCompSupplyIndex', [mkt._address]);
+      await send(comptroller, 'setSashimiSpeed', [mkt._address, etherExp(0.5)]);
+      await send(comptroller, 'harnessUpdateSashimiSupplyIndex', [mkt._address]);
 
-      const {index, block} = await call(comptroller, 'compSupplyState', [mkt._address]);
+      const {index, block} = await call(comptroller, 'sashimiSupplyState', [mkt._address]);
       expect(index).toEqualNumber(1e36);
       expect(block).toEqualNumber(0);
     });
 
     it('should not matter if the index is updated multiple times', async () => {
-      const compRemaining = compRate.mul(100)
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      await send(comptroller, 'refreshCompSpeeds');
+      const sashimiRemaining = sashimiRate.mul(100)
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      await send(comptroller, 'refreshSashimiSpeeds');
 
-      await quickMint(cLOW, a2, etherUnsigned(10e18));
-      await quickMint(cLOW, a3, etherUnsigned(15e18));
+      await quickMint(slLOW, a2, etherUnsigned(10e18));
+      await quickMint(slLOW, a3, etherUnsigned(15e18));
 
-      const a2Accrued0 = await totalCompAccrued(comptroller, a2);
-      const a3Accrued0 = await totalCompAccrued(comptroller, a3);
-      const a2Balance0 = await balanceOf(cLOW, a2);
-      const a3Balance0 = await balanceOf(cLOW, a3);
+      const a2Accrued0 = await totalSashimiAccrued(comptroller, a2);
+      const a3Accrued0 = await totalSashimiAccrued(comptroller, a3);
+      const a2Balance0 = await balanceOf(slLOW, a2);
+      const a3Balance0 = await balanceOf(slLOW, a3);
 
       await fastForward(comptroller, 20);
 
-      const txT1 = await send(cLOW, 'transfer', [a2, a3Balance0.sub(a2Balance0)], {from: a3});
+      const txT1 = await send(slLOW, 'transfer', [a2, a3Balance0.sub(a2Balance0)], {from: a3});
 
-      const a2Accrued1 = await totalCompAccrued(comptroller, a2);
-      const a3Accrued1 = await totalCompAccrued(comptroller, a3);
-      const a2Balance1 = await balanceOf(cLOW, a2);
-      const a3Balance1 = await balanceOf(cLOW, a3);
+      const a2Accrued1 = await totalSashimiAccrued(comptroller, a2);
+      const a3Accrued1 = await totalSashimiAccrued(comptroller, a3);
+      const a2Balance1 = await balanceOf(slLOW, a2);
+      const a3Balance1 = await balanceOf(slLOW, a3);
 
       await fastForward(comptroller, 10);
-      await send(comptroller, 'harnessUpdateCompSupplyIndex', [cLOW._address]);
+      await send(comptroller, 'harnessUpdateSashimiSupplyIndex', [slLOW._address]);
       await fastForward(comptroller, 10);
 
-      const txT2 = await send(cLOW, 'transfer', [a3, a2Balance1.sub(a3Balance1)], {from: a2});
+      const txT2 = await send(slLOW, 'transfer', [a3, a2Balance1.sub(a3Balance1)], {from: a2});
 
-      const a2Accrued2 = await totalCompAccrued(comptroller, a2);
-      const a3Accrued2 = await totalCompAccrued(comptroller, a3);
+      const a2Accrued2 = await totalSashimiAccrued(comptroller, a2);
+      const a3Accrued2 = await totalSashimiAccrued(comptroller, a3);
 
       expect(a2Accrued0).toEqualNumber(0);
       expect(a3Accrued0).toEqualNumber(0);
@@ -268,28 +268,28 @@ describe('Flywheel', () => {
     });
   });
 
-  describe('distributeBorrowerComp()', () => {
+  describe('distributeBorrowerSashimi()', () => {
 
-    it('should update borrow index checkpoint but not compAccrued for first time user', async () => {
-      const mkt = cREP;
-      await send(comptroller, "setCompBorrowState", [mkt._address, etherDouble(6), 10]);
-      await send(comptroller, "setCompBorrowerIndex", [mkt._address, root, etherUnsigned(0)]);
+    it('should update borrow index checkpoint but not sashimiAccrued for first time user', async () => {
+      const mkt = slREP;
+      await send(comptroller, "setSashimiBorrowState", [mkt._address, etherDouble(6), 10]);
+      await send(comptroller, "setSashimiBorrowerIndex", [mkt._address, root, etherUnsigned(0)]);
 
-      await send(comptroller, "harnessDistributeBorrowerComp", [mkt._address, root, etherExp(1.1)]);
-      expect(await call(comptroller, "compAccrued", [root])).toEqualNumber(0);
-      expect(await call(comptroller, "compBorrowerIndex", [ mkt._address, root])).toEqualNumber(6e36);
+      await send(comptroller, "harnessDistributeBorrowerSashimi", [mkt._address, root, etherExp(1.1)]);
+      expect(await call(comptroller, "sashimiAccrued", [root])).toEqualNumber(0);
+      expect(await call(comptroller, "sashimiBorrowerIndex", [ mkt._address, root])).toEqualNumber(6e36);
     });
 
-    it('should transfer comp and update borrow index checkpoint correctly for repeat time user', async () => {
-      const mkt = cREP;
-      await send(comptroller.comp, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
+    it('should transfer sashimi and update borrow index checkpoint correctly for repeat time user', async () => {
+      const mkt = slREP;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
       await send(mkt, "harnessSetAccountBorrows", [a1, etherUnsigned(5.5e18), etherExp(1)]);
-      await send(comptroller, "setCompBorrowState", [mkt._address, etherDouble(6), 10]);
-      await send(comptroller, "setCompBorrowerIndex", [mkt._address, a1, etherDouble(1)]);
+      await send(comptroller, "setSashimiBorrowState", [mkt._address, etherDouble(6), 10]);
+      await send(comptroller, "setSashimiBorrowerIndex", [mkt._address, a1, etherDouble(1)]);
 
       /*
-      * 100 delta blocks, 10e18 origin total borrows, 0.5e18 borrowSpeed => 6e18 compBorrowIndex
-      * this tests that an acct with half the total borrows over that time gets 25e18 COMP
+      * 100 delta blocks, 10e18 origin total borrows, 0.5e18 borrowSpeed => 6e18 sashimiBorrowIndex
+      * this tests that an acct with half the total borrows over that time gets 25e18 SASHIMI
         borrowerAmount = borrowBalance * 1e18 / borrow idx
                        = 5.5e18 * 1e18 / 1.1e18 = 5e18
         deltaIndex     = marketStoredIndex - userStoredIndex
@@ -297,23 +297,23 @@ describe('Flywheel', () => {
         borrowerAccrued= borrowerAmount * deltaIndex / 1e36
                        = 5e18 * 5e36 / 1e36 = 25e18
       */
-      const tx = await send(comptroller, "harnessDistributeBorrowerComp", [mkt._address, a1, etherUnsigned(1.1e18)]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(25e18);
-      expect(tx).toHaveLog('DistributedBorrowerComp', {
-        cToken: mkt._address,
+      const tx = await send(comptroller, "harnessDistributeBorrowerSashimi", [mkt._address, a1, etherUnsigned(1.1e18)]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(25e18);
+      expect(tx).toHaveLog('DistributedBorrowerSashimi', {
+        slToken: mkt._address,
         borrower: a1,
-        compDelta: etherUnsigned(25e18).toString(),
-        compBorrowIndex: etherDouble(6).toString()
+        sashimiDelta: etherUnsigned(25e18).toString(),
+        sashimiBorrowIndex: etherDouble(6).toString()
       });
     });
 
-    it('should not transfer if below comp claim threshold', async () => {
-      const mkt = cREP;
-      await send(comptroller.comp, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
+    it('should not transfer if below sashimi claim threshold', async () => {
+      const mkt = slREP;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
       await send(mkt, "harnessSetAccountBorrows", [a1, etherUnsigned(5.5e17), etherExp(1)]);
-      await send(comptroller, "setCompBorrowState", [mkt._address, etherDouble(1.0019), 10]);
-      await send(comptroller, "setCompBorrowerIndex", [mkt._address, a1, etherDouble(1)]);
+      await send(comptroller, "setSashimiBorrowState", [mkt._address, etherDouble(1.0019), 10]);
+      await send(comptroller, "setSashimiBorrowerIndex", [mkt._address, a1, etherDouble(1)]);
       /*
         borrowerAmount = borrowBalance * 1e18 / borrow idx
                        = 5.5e17 * 1e18 / 1.1e18 = 5e17
@@ -321,37 +321,37 @@ describe('Flywheel', () => {
                        = 1.0019e36 - 1e36 = 0.0019e36
         borrowerAccrued= borrowerAmount * deltaIndex / 1e36
                        = 5e17 * 0.0019e36 / 1e36 = 0.00095e18
-        0.00095e18 < compClaimThreshold of 0.001e18
+        0.00095e18 < sashimiClaimThreshold of 0.001e18
       */
-      await send(comptroller, "harnessDistributeBorrowerComp", [mkt._address, a1, etherExp(1.1)]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0.00095e18);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(0);
+      await send(comptroller, "harnessDistributeBorrowerSashimi", [mkt._address, a1, etherExp(1.1)]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0.00095e18);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(0);
     });
 
-    it('should not revert or distribute when called with non-COMP market', async () => {
-      const mkt = await makeCToken({
+    it('should not revert or distribute when called with non-SASHIMI market', async () => {
+      const mkt = await makeSLToken({
         comptroller: comptroller,
         supportMarket: true,
-        addCompMarket: false,
+        addSashimiMarket: false,
       });
 
-      await send(comptroller, "harnessDistributeBorrowerComp", [mkt._address, a1, etherExp(1.1)]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(0);
-      expect(await call(comptroller, 'compBorrowerIndex', [mkt._address, a1])).toEqualNumber(0);
+      await send(comptroller, "harnessDistributeBorrowerSashimi", [mkt._address, a1, etherExp(1.1)]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(0);
+      expect(await call(comptroller, 'sashimiBorrowerIndex', [mkt._address, a1])).toEqualNumber(0);
     });
   });
 
-  describe('distributeSupplierComp()', () => {
-    it('should transfer comp and update supply index correctly for first time user', async () => {
-      const mkt = cREP;
-      await send(comptroller.comp, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
+  describe('distributeSupplierSashimi()', () => {
+    it('should transfer sashimi and update supply index correctly for first time user', async () => {
+      const mkt = slREP;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
 
       await send(mkt, "harnessSetBalance", [a1, etherUnsigned(5e18)]);
-      await send(comptroller, "setCompSupplyState", [mkt._address, etherDouble(6), 10]);
+      await send(comptroller, "setSashimiSupplyState", [mkt._address, etherDouble(6), 10]);
       /*
-      * 100 delta blocks, 10e18 total supply, 0.5e18 supplySpeed => 6e18 compSupplyIndex
-      * confirming an acct with half the total supply over that time gets 25e18 COMP:
+      * 100 delta blocks, 10e18 total supply, 0.5e18 supplySpeed => 6e18 sashimiSupplyIndex
+      * confirming an acct with half the total supply over that time gets 25e18 SASHIMI:
         supplierAmount  = 5e18
         deltaIndex      = marketStoredIndex - userStoredIndex
                         = 6e36 - 1e36 = 5e36
@@ -359,24 +359,24 @@ describe('Flywheel', () => {
                         = 5e18 * 5e36 / 1e36 = 25e18
       */
 
-      const tx = await send(comptroller, "harnessDistributeSupplierComp", [mkt._address, a1]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(25e18);
-      expect(tx).toHaveLog('DistributedSupplierComp', {
-        cToken: mkt._address,
+      const tx = await send(comptroller, "harnessDistributeSupplierSashimi", [mkt._address, a1]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(25e18);
+      expect(tx).toHaveLog('DistributedSupplierSashimi', {
+        slToken: mkt._address,
         supplier: a1,
-        compDelta: etherUnsigned(25e18).toString(),
-        compSupplyIndex: etherDouble(6).toString()
+        sashimiDelta: etherUnsigned(25e18).toString(),
+        sashimiSupplyIndex: etherDouble(6).toString()
       });
     });
 
-    it('should update comp accrued and supply index for repeat user', async () => {
-      const mkt = cREP;
-      await send(comptroller.comp, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
+    it('should update sashimi accrued and supply index for repeat user', async () => {
+      const mkt = slREP;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
 
       await send(mkt, "harnessSetBalance", [a1, etherUnsigned(5e18)]);
-      await send(comptroller, "setCompSupplyState", [mkt._address, etherDouble(6), 10]);
-      await send(comptroller, "setCompSupplierIndex", [mkt._address, a1, etherDouble(2)])
+      await send(comptroller, "setSashimiSupplyState", [mkt._address, etherDouble(6), 10]);
+      await send(comptroller, "setSashimiSupplierIndex", [mkt._address, a1, etherDouble(2)])
       /*
         supplierAmount  = 5e18
         deltaIndex      = marketStoredIndex - userStoredIndex
@@ -385,17 +385,17 @@ describe('Flywheel', () => {
                         = 5e18 * 4e36 / 1e36 = 20e18
       */
 
-      await send(comptroller, "harnessDistributeSupplierComp", [mkt._address, a1]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(20e18);
+      await send(comptroller, "harnessDistributeSupplierSashimi", [mkt._address, a1]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(20e18);
     });
 
-    it('should not transfer when compAccrued below threshold', async () => {
-      const mkt = cREP;
-      await send(comptroller.comp, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
+    it('should not transfer when sashimiAccrued below threshold', async () => {
+      const mkt = slREP;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, etherUnsigned(50e18)], {from: root});
 
       await send(mkt, "harnessSetBalance", [a1, etherUnsigned(5e17)]);
-      await send(comptroller, "setCompSupplyState", [mkt._address, etherDouble(1.0019), 10]);
+      await send(comptroller, "setSashimiSupplyState", [mkt._address, etherDouble(1.0019), 10]);
       /*
         supplierAmount  = 5e17
         deltaIndex      = marketStoredIndex - userStoredIndex
@@ -404,371 +404,371 @@ describe('Flywheel', () => {
                         = 5e17 * 0.0019e36 / 1e36 = 0.00095e18
       */
 
-      await send(comptroller, "harnessDistributeSupplierComp", [mkt._address, a1]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0.00095e18);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(0);
+      await send(comptroller, "harnessDistributeSupplierSashimi", [mkt._address, a1]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0.00095e18);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(0);
     });
 
-    it('should not revert or distribute when called with non-COMP market', async () => {
-      const mkt = await makeCToken({
+    it('should not revert or distribute when called with non-SASHIMI market', async () => {
+      const mkt = await makeSLToken({
         comptroller: comptroller,
         supportMarket: true,
-        addCompMarket: false,
+        addSashimiMarket: false,
       });
 
-      await send(comptroller, "harnessDistributeSupplierComp", [mkt._address, a1]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(0);
-      expect(await call(comptroller, 'compBorrowerIndex', [mkt._address, a1])).toEqualNumber(0);
+      await send(comptroller, "harnessDistributeSupplierSashimi", [mkt._address, a1]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(0);
+      expect(await call(comptroller, 'sashimiBorrowerIndex', [mkt._address, a1])).toEqualNumber(0);
     });
 
   });
 
-  describe('transferComp', () => {
-    it('should transfer comp accrued when amount is above threshold', async () => {
-      const compRemaining = 1000, a1AccruedPre = 100, threshold = 1;
-      const compBalancePre = await compBalance(comptroller, a1);
-      const tx0 = await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      const tx1 = await send(comptroller, 'setCompAccrued', [a1, a1AccruedPre]);
-      const tx2 = await send(comptroller, 'harnessTransferComp', [a1, a1AccruedPre, threshold]);
-      const a1AccruedPost = await compAccrued(comptroller, a1);
-      const compBalancePost = await compBalance(comptroller, a1);
-      expect(compBalancePre).toEqualNumber(0);
-      expect(compBalancePost).toEqualNumber(a1AccruedPre);
+  describe('transferSashimi', () => {
+    it('should transfer sashimi accrued when amount is above threshold', async () => {
+      const sashimiRemaining = 1000, a1AccruedPre = 100, threshold = 1;
+      const sashimiBalancePre = await sashimiBalance(comptroller, a1);
+      const tx0 = await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      const tx1 = await send(comptroller, 'setSashimiAccrued', [a1, a1AccruedPre]);
+      const tx2 = await send(comptroller, 'harnessTransferSashimi', [a1, a1AccruedPre, threshold]);
+      const a1AccruedPost = await sashimiAccrued(comptroller, a1);
+      const sashimiBalancePost = await sashimiBalance(comptroller, a1);
+      expect(sashimiBalancePre).toEqualNumber(0);
+      expect(sashimiBalancePost).toEqualNumber(a1AccruedPre);
     });
 
-    it('should not transfer when comp accrued is below threshold', async () => {
-      const compRemaining = 1000, a1AccruedPre = 100, threshold = 101;
-      const compBalancePre = await call(comptroller.comp, 'balanceOf', [a1]);
-      const tx0 = await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      const tx1 = await send(comptroller, 'setCompAccrued', [a1, a1AccruedPre]);
-      const tx2 = await send(comptroller, 'harnessTransferComp', [a1, a1AccruedPre, threshold]);
-      const a1AccruedPost = await compAccrued(comptroller, a1);
-      const compBalancePost = await compBalance(comptroller, a1);
-      expect(compBalancePre).toEqualNumber(0);
-      expect(compBalancePost).toEqualNumber(0);
+    it('should not transfer when sashimi accrued is below threshold', async () => {
+      const sashimiRemaining = 1000, a1AccruedPre = 100, threshold = 101;
+      const sashimiBalancePre = await call(comptroller.sashimi, 'balanceOf', [a1]);
+      const tx0 = await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      const tx1 = await send(comptroller, 'setSashimiAccrued', [a1, a1AccruedPre]);
+      const tx2 = await send(comptroller, 'harnessTransferSashimi', [a1, a1AccruedPre, threshold]);
+      const a1AccruedPost = await sashimiAccrued(comptroller, a1);
+      const sashimiBalancePost = await sashimiBalance(comptroller, a1);
+      expect(sashimiBalancePre).toEqualNumber(0);
+      expect(sashimiBalancePost).toEqualNumber(0);
     });
 
-    it('should not transfer comp if comp accrued is greater than comp remaining', async () => {
-      const compRemaining = 99, a1AccruedPre = 100, threshold = 1;
-      const compBalancePre = await compBalance(comptroller, a1);
-      const tx0 = await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      const tx1 = await send(comptroller, 'setCompAccrued', [a1, a1AccruedPre]);
-      const tx2 = await send(comptroller, 'harnessTransferComp', [a1, a1AccruedPre, threshold]);
-      const a1AccruedPost = await compAccrued(comptroller, a1);
-      const compBalancePost = await compBalance(comptroller, a1);
-      expect(compBalancePre).toEqualNumber(0);
-      expect(compBalancePost).toEqualNumber(0);
+    it('should not transfer sashimi if sashimi accrued is greater than sashimi remaining', async () => {
+      const sashimiRemaining = 99, a1AccruedPre = 100, threshold = 1;
+      const sashimiBalancePre = await sashimiBalance(comptroller, a1);
+      const tx0 = await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      const tx1 = await send(comptroller, 'setSashimiAccrued', [a1, a1AccruedPre]);
+      const tx2 = await send(comptroller, 'harnessTransferSashimi', [a1, a1AccruedPre, threshold]);
+      const a1AccruedPost = await sashimiAccrued(comptroller, a1);
+      const sashimiBalancePost = await sashimiBalance(comptroller, a1);
+      expect(sashimiBalancePre).toEqualNumber(0);
+      expect(sashimiBalancePost).toEqualNumber(0);
     });
   });
 
-  describe('claimComp', () => {
-    it('should accrue comp and then transfer comp accrued', async () => {
-      const compRemaining = compRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      await send(comptroller, 'refreshCompSpeeds');
-      const speed = await call(comptroller, 'compSpeeds', [cLOW._address]);
-      const a2AccruedPre = await compAccrued(comptroller, a2);
-      const compBalancePre = await compBalance(comptroller, a2);
-      await quickMint(cLOW, a2, mintAmount);
+  describe('claimSashimi', () => {
+    it('should accrue sashimi and then transfer sashimi accrued', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      await send(comptroller, 'refreshSashimiSpeeds');
+      const speed = await call(comptroller, 'sashimiSpeeds', [slLOW._address]);
+      const a2AccruedPre = await sashimiAccrued(comptroller, a2);
+      const sashimiBalancePre = await sashimiBalance(comptroller, a2);
+      await quickMint(slLOW, a2, mintAmount);
       await fastForward(comptroller, deltaBlocks);
-      const tx = await send(comptroller, 'claimComp', [a2]);
-      const a2AccruedPost = await compAccrued(comptroller, a2);
-      const compBalancePost = await compBalance(comptroller, a2);
+      const tx = await send(comptroller, 'claimSashimi', [a2]);
+      const a2AccruedPost = await sashimiAccrued(comptroller, a2);
+      const sashimiBalancePost = await sashimiBalance(comptroller, a2);
       expect(tx.gasUsed).toBeLessThan(330000);
-      expect(speed).toEqualNumber(compRate);
+      expect(speed).toEqualNumber(sashimiRate);
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
-      expect(compBalancePre).toEqualNumber(0);
-      expect(compBalancePost).toEqualNumber(compRate.mul(deltaBlocks).sub(1)); // index is 8333...
+      expect(sashimiBalancePre).toEqualNumber(0);
+      expect(sashimiBalancePost).toEqualNumber(sashimiRate.mul(deltaBlocks).sub(1)); // index is 8333...
     });
 
-    it('should accrue comp and then transfer comp accrued in a single market', async () => {
-      const compRemaining = compRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      await send(comptroller, 'refreshCompSpeeds');
-      const speed = await call(comptroller, 'compSpeeds', [cLOW._address]);
-      const a2AccruedPre = await compAccrued(comptroller, a2);
-      const compBalancePre = await compBalance(comptroller, a2);
-      await quickMint(cLOW, a2, mintAmount);
+    it('should accrue sashimi and then transfer sashimi accrued in a single market', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), mintAmount = etherUnsigned(12e18), deltaBlocks = 10;
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      await send(comptroller, 'refreshSashimiSpeeds');
+      const speed = await call(comptroller, 'sashimiSpeeds', [slLOW._address]);
+      const a2AccruedPre = await sashimiAccrued(comptroller, a2);
+      const sashimiBalancePre = await sashimiBalance(comptroller, a2);
+      await quickMint(slLOW, a2, mintAmount);
       await fastForward(comptroller, deltaBlocks);
-      const tx = await send(comptroller, 'claimComp', [a2, [cLOW._address]]);
-      const a2AccruedPost = await compAccrued(comptroller, a2);
-      const compBalancePost = await compBalance(comptroller, a2);
+      const tx = await send(comptroller, 'claimSashimi', [a2, [slLOW._address]]);
+      const a2AccruedPost = await sashimiAccrued(comptroller, a2);
+      const sashimiBalancePost = await sashimiBalance(comptroller, a2);
       expect(tx.gasUsed).toBeLessThan(160000);
-      expect(speed).toEqualNumber(compRate);
+      expect(speed).toEqualNumber(sashimiRate);
       expect(a2AccruedPre).toEqualNumber(0);
       expect(a2AccruedPost).toEqualNumber(0);
-      expect(compBalancePre).toEqualNumber(0);
-      expect(compBalancePost).toEqualNumber(compRate.mul(deltaBlocks).sub(1)); // index is 8333...
+      expect(sashimiBalancePre).toEqualNumber(0);
+      expect(sashimiBalancePost).toEqualNumber(sashimiRate.mul(deltaBlocks).sub(1)); // index is 8333...
     });
 
-    it('should claim when comp accrued is below threshold', async () => {
-      const compRemaining = etherExp(1), accruedAmt = etherUnsigned(0.0009e18)
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
-      await send(comptroller, 'setCompAccrued', [a1, accruedAmt]);
-      await send(comptroller, 'claimComp', [a1, [cLOW._address]]);
-      expect(await compAccrued(comptroller, a1)).toEqualNumber(0);
-      expect(await compBalance(comptroller, a1)).toEqualNumber(accruedAmt);
+    it('should claim when sashimi accrued is below threshold', async () => {
+      const sashimiRemaining = etherExp(1), accruedAmt = etherUnsigned(0.0009e18)
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
+      await send(comptroller, 'setSashimiAccrued', [a1, accruedAmt]);
+      await send(comptroller, 'claimSashimi', [a1, [slLOW._address]]);
+      expect(await sashimiAccrued(comptroller, a1)).toEqualNumber(0);
+      expect(await sashimiBalance(comptroller, a1)).toEqualNumber(accruedAmt);
     });
 
     it('should revert when a market is not listed', async () => {
-      const cNOT = await makeCToken({comptroller});
+      const cNOT = await makeSLToken({comptroller});
       await expect(
-        send(comptroller, 'claimComp', [a1, [cNOT._address]])
+        send(comptroller, 'claimSashimi', [a1, [cNOT._address]])
       ).rejects.toRevert('revert market must be listed');
     });
   });
 
-  describe('claimComp batch', () => {
-    it('should revert when claiming comp from non-listed market', async () => {
-      const compRemaining = compRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
+  describe('claimSashimi batch', () => {
+    it('should revert when claiming sashimi from non-listed market', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
 
       for(let from of claimAccts) {
-        expect(await send(cLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
-        send(cLOW.underlying, 'approve', [cLOW._address, mintAmount], { from });
-        send(cLOW, 'mint', [mintAmount], { from });
+        expect(await send(slLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
+        send(slLOW.underlying, 'approve', [slLOW._address, mintAmount], { from });
+        send(slLOW, 'mint', [mintAmount], { from });
       }
 
-      await pretendBorrow(cLOW, root, 1, 1, etherExp(10));
-      await send(comptroller, 'refreshCompSpeeds');
+      await pretendBorrow(slLOW, root, 1, 1, etherExp(10));
+      await send(comptroller, 'refreshSashimiSpeeds');
 
       await fastForward(comptroller, deltaBlocks);
 
-      await expect(send(comptroller, 'claimComp', [claimAccts, [cLOW._address, cEVIL._address], true, true])).rejects.toRevert('revert market must be listed');
+      await expect(send(comptroller, 'claimSashimi', [claimAccts, [slLOW._address, cEVIL._address], true, true])).rejects.toRevert('revert market must be listed');
     });
 
 
-    it('should claim the expected amount when holders and ctokens arg is duplicated', async () => {
-      const compRemaining = compRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
+    it('should claim the expected amount when holders and sltokens arg is duplicated', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
       for(let from of claimAccts) {
-        expect(await send(cLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
-        send(cLOW.underlying, 'approve', [cLOW._address, mintAmount], { from });
-        send(cLOW, 'mint', [mintAmount], { from });
+        expect(await send(slLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
+        send(slLOW.underlying, 'approve', [slLOW._address, mintAmount], { from });
+        send(slLOW, 'mint', [mintAmount], { from });
       }
-      await pretendBorrow(cLOW, root, 1, 1, etherExp(10));
-      await send(comptroller, 'refreshCompSpeeds');
+      await pretendBorrow(slLOW, root, 1, 1, etherExp(10));
+      await send(comptroller, 'refreshSashimiSpeeds');
 
       await fastForward(comptroller, deltaBlocks);
 
-      const tx = await send(comptroller, 'claimComp', [[...claimAccts, ...claimAccts], [cLOW._address, cLOW._address], false, true]);
-      // comp distributed => 10e18
+      const tx = await send(comptroller, 'claimSashimi', [[...claimAccts, ...claimAccts], [slLOW._address, slLOW._address], false, true]);
+      // sashimi distributed => 10e18
       for(let acct of claimAccts) {
-        expect(await call(comptroller, 'compSupplierIndex', [cLOW._address, acct])).toEqualNumber(etherDouble(1.125));
-        expect(await compBalance(comptroller, acct)).toEqualNumber(etherExp(1.25));
+        expect(await call(comptroller, 'sashimiSupplierIndex', [slLOW._address, acct])).toEqualNumber(etherDouble(1.125));
+        expect(await sashimiBalance(comptroller, acct)).toEqualNumber(etherExp(1.25));
       }
     });
 
-    it('claims comp for multiple suppliers only', async () => {
-      const compRemaining = compRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
+    it('claims sashimi for multiple suppliers only', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10);
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
       let [_, __, ...claimAccts] = saddle.accounts;
       for(let from of claimAccts) {
-        expect(await send(cLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
-        send(cLOW.underlying, 'approve', [cLOW._address, mintAmount], { from });
-        send(cLOW, 'mint', [mintAmount], { from });
+        expect(await send(slLOW.underlying, 'harnessSetBalance', [from, mintAmount], { from })).toSucceed();
+        send(slLOW.underlying, 'approve', [slLOW._address, mintAmount], { from });
+        send(slLOW, 'mint', [mintAmount], { from });
       }
-      await pretendBorrow(cLOW, root, 1, 1, etherExp(10));
-      await send(comptroller, 'refreshCompSpeeds');
+      await pretendBorrow(slLOW, root, 1, 1, etherExp(10));
+      await send(comptroller, 'refreshSashimiSpeeds');
 
       await fastForward(comptroller, deltaBlocks);
 
-      const tx = await send(comptroller, 'claimComp', [claimAccts, [cLOW._address], false, true]);
-      // comp distributed => 10e18
+      const tx = await send(comptroller, 'claimSashimi', [claimAccts, [slLOW._address], false, true]);
+      // sashimi distributed => 10e18
       for(let acct of claimAccts) {
-        expect(await call(comptroller, 'compSupplierIndex', [cLOW._address, acct])).toEqualNumber(etherDouble(1.125));
-        expect(await compBalance(comptroller, acct)).toEqualNumber(etherExp(1.25));
+        expect(await call(comptroller, 'sashimiSupplierIndex', [slLOW._address, acct])).toEqualNumber(etherDouble(1.125));
+        expect(await sashimiBalance(comptroller, acct)).toEqualNumber(etherExp(1.25));
       }
     });
 
-    it('claims comp for multiple borrowers only, primes uninitiated', async () => {
-      const compRemaining = compRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10), borrowAmt = etherExp(1), borrowIdx = etherExp(1)
-      await send(comptroller.comp, 'transfer', [comptroller._address, compRemaining], {from: root});
+    it('claims sashimi for multiple borrowers only, primes uninitiated', async () => {
+      const sashimiRemaining = sashimiRate.mul(100), deltaBlocks = 10, mintAmount = etherExp(10), borrowAmt = etherExp(1), borrowIdx = etherExp(1)
+      await send(comptroller.sashimi, 'transfer', [comptroller._address, sashimiRemaining], {from: root});
       let [_,__, ...claimAccts] = saddle.accounts;
 
       for(let acct of claimAccts) {
-        await send(cLOW, 'harnessIncrementTotalBorrows', [borrowAmt]);
-        await send(cLOW, 'harnessSetAccountBorrows', [acct, borrowAmt, borrowIdx]);
+        await send(slLOW, 'harnessIncrementTotalBorrows', [borrowAmt]);
+        await send(slLOW, 'harnessSetAccountBorrows', [acct, borrowAmt, borrowIdx]);
       }
-      await send(comptroller, 'refreshCompSpeeds');
+      await send(comptroller, 'refreshSashimiSpeeds');
 
       await send(comptroller, 'harnessFastForward', [10]);
 
-      const tx = await send(comptroller, 'claimComp', [claimAccts, [cLOW._address], true, false]);
+      const tx = await send(comptroller, 'claimSashimi', [claimAccts, [slLOW._address], true, false]);
       for(let acct of claimAccts) {
-        expect(await call(comptroller, 'compBorrowerIndex', [cLOW._address, acct])).toEqualNumber(etherDouble(2.25));
-        expect(await call(comptroller, 'compSupplierIndex', [cLOW._address, acct])).toEqualNumber(0);
+        expect(await call(comptroller, 'sashimiBorrowerIndex', [slLOW._address, acct])).toEqualNumber(etherDouble(2.25));
+        expect(await call(comptroller, 'sashimiSupplierIndex', [slLOW._address, acct])).toEqualNumber(0);
       }
     });
 
     it('should revert when a market is not listed', async () => {
-      const cNOT = await makeCToken({comptroller});
+      const cNOT = await makeSLToken({comptroller});
       await expect(
-        send(comptroller, 'claimComp', [[a1, a2], [cNOT._address], true, true])
+        send(comptroller, 'claimSashimi', [[a1, a2], [cNOT._address], true, true])
       ).rejects.toRevert('revert market must be listed');
     });
   });
 
-  describe('refreshCompSpeeds', () => {
+  describe('refreshSashimiSpeeds', () => {
     it('should start out 0', async () => {
-      await send(comptroller, 'refreshCompSpeeds');
-      const speed = await call(comptroller, 'compSpeeds', [cLOW._address]);
+      await send(comptroller, 'refreshSashimiSpeeds');
+      const speed = await call(comptroller, 'sashimiSpeeds', [slLOW._address]);
       expect(speed).toEqualNumber(0);
     });
 
     it('should get correct speeds with borrows', async () => {
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      const tx = await send(comptroller, 'refreshCompSpeeds');
-      const speed = await call(comptroller, 'compSpeeds', [cLOW._address]);
-      expect(speed).toEqualNumber(compRate);
-      expect(tx).toHaveLog(['CompSpeedUpdated', 0], {
-        cToken: cLOW._address,
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      const tx = await send(comptroller, 'refreshSashimiSpeeds');
+      const speed = await call(comptroller, 'sashimiSpeeds', [slLOW._address]);
+      expect(speed).toEqualNumber(sashimiRate);
+      expect(tx).toHaveLog(['SashimiSpeedUpdated', 0], {
+        slToken: slLOW._address,
         newSpeed: speed
       });
-      expect(tx).toHaveLog(['CompSpeedUpdated', 1], {
-        cToken: cREP._address,
+      expect(tx).toHaveLog(['SashimiSpeedUpdated', 1], {
+        slToken: slREP._address,
         newSpeed: 0
       });
-      expect(tx).toHaveLog(['CompSpeedUpdated', 2], {
-        cToken: cZRX._address,
+      expect(tx).toHaveLog(['SashimiSpeedUpdated', 2], {
+        slToken: slZRX._address,
         newSpeed: 0
       });
     });
 
     it('should get correct speeds for 2 assets', async () => {
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      await pretendBorrow(cZRX, a1, 1, 1, 100);
-      await send(comptroller, 'refreshCompSpeeds');
-      const speed1 = await call(comptroller, 'compSpeeds', [cLOW._address]);
-      const speed2 = await call(comptroller, 'compSpeeds', [cREP._address]);
-      const speed3 = await call(comptroller, 'compSpeeds', [cZRX._address]);
-      expect(speed1).toEqualNumber(compRate.div(4));
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      await pretendBorrow(slZRX, a1, 1, 1, 100);
+      await send(comptroller, 'refreshSashimiSpeeds');
+      const speed1 = await call(comptroller, 'sashimiSpeeds', [slLOW._address]);
+      const speed2 = await call(comptroller, 'sashimiSpeeds', [slREP._address]);
+      const speed3 = await call(comptroller, 'sashimiSpeeds', [slZRX._address]);
+      expect(speed1).toEqualNumber(sashimiRate.div(4));
       expect(speed2).toEqualNumber(0);
-      expect(speed3).toEqualNumber(compRate.div(4).mul(3));
+      expect(speed3).toEqualNumber(sashimiRate.div(4).mul(3));
     });
 
     it('should not be callable inside a contract', async () => {
-      await pretendBorrow(cLOW, a1, 1, 1, 100);
-      await pretendBorrow(cZRX, a1, 1, 1, 100);
+      await pretendBorrow(slLOW, a1, 1, 1, 100);
+      await pretendBorrow(slZRX, a1, 1, 1, 100);
       await expect(deploy('RefreshSpeedsProxy', [comptroller._address])).rejects.toRevert('revert only externally owned accounts may refresh speeds');
     });
   });
 
-  describe('_addCompMarkets', () => {
-    it('should correctly add a comp market if called by admin', async () => {
-      const cBAT = await makeCToken({comptroller, supportMarket: true});
-      const tx = await send(comptroller, '_addCompMarkets', [[cBAT._address]]);
-      const markets = await call(comptroller, 'getCompMarkets');
-      expect(markets).toEqual([cLOW, cREP, cZRX, cBAT].map((c) => c._address));
-      expect(tx).toHaveLog('MarketComped', {
-        cToken: cBAT._address,
-        isComped: true
+  describe('_addSashimiMarkets', () => {
+    it('should correctly add a sashimi market if called by admin', async () => {
+      const slBAT = await makeSLToken({comptroller, supportMarket: true});
+      const tx = await send(comptroller, '_addSashimiMarkets', [[slBAT._address]]);
+      const markets = await call(comptroller, 'getSashimiMarkets');
+      expect(markets).toEqual([slLOW, slREP, slZRX, slBAT].map((c) => c._address));
+      expect(tx).toHaveLog('MarketSashimied', {
+        slToken: slBAT._address,
+        isSashimied: true
       });
     });
 
     it('should revert if not called by admin', async () => {
-      const cBAT = await makeCToken({ comptroller, supportMarket: true });
+      const slBAT = await makeSLToken({ comptroller, supportMarket: true });
       await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]], {from: a1})
-      ).rejects.toRevert('revert only admin can add comp market');
+        send(comptroller, '_addSashimiMarkets', [[slBAT._address]], {from: a1})
+      ).rejects.toRevert('revert only admin can add sashimi market');
     });
 
     it('should not add non-listed markets', async () => {
-      const cBAT = await makeCToken({ comptroller, supportMarket: false });
+      const slBAT = await makeSLToken({ comptroller, supportMarket: false });
       await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert comp market is not listed');
+        send(comptroller, '_addSashimiMarkets', [[slBAT._address]])
+      ).rejects.toRevert('revert sashimi market is not listed');
 
-      const markets = await call(comptroller, 'getCompMarkets');
-      expect(markets).toEqual([cLOW, cREP, cZRX].map((c) => c._address));
+      const markets = await call(comptroller, 'getSashimiMarkets');
+      expect(markets).toEqual([slLOW, slREP, slZRX].map((c) => c._address));
     });
 
     it('should not add duplicate markets', async () => {
-      const cBAT = await makeCToken({comptroller, supportMarket: true});
-      await send(comptroller, '_addCompMarkets', [[cBAT._address]]);
+      const slBAT = await makeSLToken({comptroller, supportMarket: true});
+      await send(comptroller, '_addSashimiMarkets', [[slBAT._address]]);
 
       await expect(
-        send(comptroller, '_addCompMarkets', [[cBAT._address]])
-      ).rejects.toRevert('revert comp market already added');
+        send(comptroller, '_addSashimiMarkets', [[slBAT._address]])
+      ).rejects.toRevert('revert sashimi market already added');
     });
 
     it('should not write over a markets existing state', async () => {
-      const mkt = cLOW._address;
+      const mkt = slLOW._address;
       const bn0 = 10, bn1 = 20;
       const idx = etherUnsigned(1.5e36);
 
-      await send(comptroller, "setCompSupplyState", [mkt, idx, bn0]);
-      await send(comptroller, "setCompBorrowState", [mkt, idx, bn0]);
+      await send(comptroller, "setSashimiSupplyState", [mkt, idx, bn0]);
+      await send(comptroller, "setSashimiBorrowState", [mkt, idx, bn0]);
       await send(comptroller, "setBlockNumber", [bn1]);
-      await send(comptroller, "_dropCompMarket", [mkt]);
-      await send(comptroller, "_addCompMarkets", [[mkt]]);
+      await send(comptroller, "_dropSashimiMarket", [mkt]);
+      await send(comptroller, "_addSashimiMarkets", [[mkt]]);
 
-      const supplyState = await call(comptroller, 'compSupplyState', [mkt]);
+      const supplyState = await call(comptroller, 'sashimiSupplyState', [mkt]);
       expect(supplyState.block).toEqual(bn1.toString());
       expect(supplyState.index).toEqual(idx.toString());
 
-      const borrowState = await call(comptroller, 'compBorrowState', [mkt]);
+      const borrowState = await call(comptroller, 'sashimiBorrowState', [mkt]);
       expect(borrowState.block).toEqual(bn1.toString());
       expect(borrowState.index).toEqual(idx.toString());
     });
   });
 
-  describe('_dropCompMarket', () => {
-    it('should correctly drop a comp market if called by admin', async () => {
-      const tx = await send(comptroller, '_dropCompMarket', [cLOW._address]);
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cREP, cZRX].map((c) => c._address)
+  describe('_dropSashimiMarket', () => {
+    it('should correctly drop a sashimi market if called by admin', async () => {
+      const tx = await send(comptroller, '_dropSashimiMarket', [slLOW._address]);
+      expect(await call(comptroller, 'getSashimiMarkets')).toEqual(
+        [slREP, slZRX].map((c) => c._address)
       );
-      expect(tx).toHaveLog('MarketComped', {
-        cToken: cLOW._address,
-        isComped: false
+      expect(tx).toHaveLog('MarketSashimied', {
+        slToken: slLOW._address,
+        isSashimied: false
       });
     });
 
-    it('should correctly drop a comp market from middle of array', async () => {
-      await send(comptroller, '_dropCompMarket', [cREP._address]);
-      expect(await call(comptroller, 'getCompMarkets')).toEqual(
-        [cLOW, cZRX].map((c) => c._address)
+    it('should correctly drop a sashimi market from middle of array', async () => {
+      await send(comptroller, '_dropSashimiMarket', [slREP._address]);
+      expect(await call(comptroller, 'getSashimiMarkets')).toEqual(
+        [slLOW, slZRX].map((c) => c._address)
       );
     });
 
-    it('should not drop a comp market unless called by admin', async () => {
+    it('should not drop a sashimi market unless called by admin', async () => {
       await expect(
-        send(comptroller, '_dropCompMarket', [cLOW._address], {from: a1})
-      ).rejects.toRevert('revert only admin can drop comp market');
+        send(comptroller, '_dropSashimiMarket', [slLOW._address], {from: a1})
+      ).rejects.toRevert('revert only admin can drop sashimi market');
     });
 
-    it('should not drop a comp market already dropped', async () => {
-      await send(comptroller, '_dropCompMarket', [cLOW._address]);
+    it('should not drop a sashimi market already dropped', async () => {
+      await send(comptroller, '_dropSashimiMarket', [slLOW._address]);
       await expect(
-        send(comptroller, '_dropCompMarket', [cLOW._address])
-      ).rejects.toRevert('revert market is not a comp market');
+        send(comptroller, '_dropSashimiMarket', [slLOW._address])
+      ).rejects.toRevert('revert market is not a sashimi market');
     });
   });
 
-  describe('_setCompRate', () => {
-    it('should correctly change comp rate if called by admin', async () => {
-      expect(await call(comptroller, 'compRate')).toEqualNumber(etherUnsigned(1e18));
-      const tx1 = await send(comptroller, '_setCompRate', [etherUnsigned(3e18)]);
-      expect(await call(comptroller, 'compRate')).toEqualNumber(etherUnsigned(3e18));
-      const tx2 = await send(comptroller, '_setCompRate', [etherUnsigned(2e18)]);
-      expect(await call(comptroller, 'compRate')).toEqualNumber(etherUnsigned(2e18));
-      expect(tx2).toHaveLog('NewCompRate', {
-        oldCompRate: etherUnsigned(3e18),
-        newCompRate: etherUnsigned(2e18)
+  describe('_setSashimiRate', () => {
+    it('should correctly change sashimi rate if called by admin', async () => {
+      expect(await call(comptroller, 'sashimiRate')).toEqualNumber(etherUnsigned(1e18));
+      const tx1 = await send(comptroller, '_setSashimiRate', [etherUnsigned(3e18)]);
+      expect(await call(comptroller, 'sashimiRate')).toEqualNumber(etherUnsigned(3e18));
+      const tx2 = await send(comptroller, '_setSashimiRate', [etherUnsigned(2e18)]);
+      expect(await call(comptroller, 'sashimiRate')).toEqualNumber(etherUnsigned(2e18));
+      expect(tx2).toHaveLog('NewSashimiRate', {
+        oldSashimiRate: etherUnsigned(3e18),
+        newSashimiRate: etherUnsigned(2e18)
       });
     });
 
-    it('should not change comp rate unless called by admin', async () => {
+    it('should not change sashimi rate unless called by admin', async () => {
       await expect(
-        send(comptroller, '_setCompRate', [cLOW._address], {from: a1})
-      ).rejects.toRevert('revert only admin can change comp rate');
+        send(comptroller, '_setSashimiRate', [slLOW._address], {from: a1})
+      ).rejects.toRevert('revert only admin can change sashimi rate');
     });
   });
 });

@@ -21,8 +21,8 @@ import { getUserValue, userFetchers } from './Value/UserValue';
 import { comptrollerFetchers, getComptrollerValue } from './Value/ComptrollerValue';
 import { comptrollerImplFetchers, getComptrollerImplValue } from './Value/ComptrollerImplValue';
 import { getUnitrollerValue, unitrollerFetchers } from './Value/UnitrollerValue';
-import { cTokenFetchers, getCTokenValue } from './Value/CTokenValue';
-import { cTokenDelegateFetchers, getCTokenDelegateValue } from './Value/CTokenDelegateValue';
+import { slTokenFetchers, getSLTokenValue } from './Value/SLTokenValue';
+import { slTokenDelegateFetchers, getSLTokenDelegateValue } from './Value/SLTokenDelegateValue';
 import { erc20Fetchers, getErc20Value } from './Value/Erc20Value';
 import { mcdFetchers, getMCDValue } from './Value/MCDValue';
 import { getInterestRateModelValue, interestRateModelFetchers } from './Value/InterestRateModelValue';
@@ -31,8 +31,6 @@ import { getPriceOracleProxyValue, priceOracleProxyFetchers } from './Value/Pric
 import { getAnchoredViewValue, anchoredViewFetchers } from './Value/AnchoredViewValue';
 import { getTimelockValue, timelockFetchers, getTimelockAddress } from './Value/TimelockValue';
 import { getMaximillionValue, maximillionFetchers } from './Value/MaximillionValue';
-import { getCompValue, compFetchers } from './Value/CompValue';
-import { getGovernorValue, governorFetchers } from './Value/GovernorValue';
 import { getAddress } from './ContractLookup';
 import { getCurrentBlockNumber, getCurrentTimestamp, mustArray, sendRPC } from './Utils';
 import { toEncodableNum } from './Encoding';
@@ -778,8 +776,8 @@ const fetchers = [
 
       * "Equal given:<Value> expected:<Value>" - Returns true if given values are equal
         * E.g. "Equal (Exactly 0) Zero"
-        * E.g. "Equal (CToken cZRX TotalSupply) (Exactly 55)"
-        * E.g. "Equal (CToken cZRX Comptroller) (Comptroller Address)"
+        * E.g. "Equal (SLToken slZRX TotalSupply) (Exactly 55)"
+        * E.g. "Equal (SLToken slZRX Comptroller) (Comptroller Address)"
     `,
     'Equal',
     [new Arg('given', getCoreValue), new Arg('expected', getCoreValue)],
@@ -847,25 +845,25 @@ const fetchers = [
   ),
   new Fetcher<{ res: Value }, Value>(
     `
-      #### CToken
+      #### SLToken
 
-      * "CToken ...cTokenArgs" - Returns cToken value
+      * "SLToken ...slTokenArgs" - Returns slToken value
     `,
-    'CToken',
-    [new Arg('res', getCTokenValue, { variadic: true })],
+    'SLToken',
+    [new Arg('res', getSLTokenValue, { variadic: true })],
     async (world, { res }) => res,
-    { subExpressions: cTokenFetchers() }
+    { subExpressions: slTokenFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
     `
-      #### CTokenDelegate
+      #### SLTokenDelegate
 
-      * "CTokenDelegate ...cTokenDelegateArgs" - Returns cToken delegate value
+      * "SLTokenDelegate ...slTokenDelegateArgs" - Returns slToken delegate value
     `,
-    'CTokenDelegate',
-    [new Arg('res', getCTokenDelegateValue, { variadic: true })],
+    'SLTokenDelegate',
+    [new Arg('res', getSLTokenDelegateValue, { variadic: true })],
     async (world, { res }) => res,
-    { subExpressions: cTokenDelegateFetchers() }
+    { subExpressions: slTokenDelegateFetchers() }
   ),
   new Fetcher<{ res: Value }, Value>(
     `
@@ -955,33 +953,11 @@ const fetchers = [
     async (world, { res }) => res,
     { subExpressions: mcdFetchers() }
   ),
-  new Fetcher<{ res: Value }, Value>(
-    `
-      #### Comp
-
-      * "Comp ...compArgs" - Returns Comp value
-    `,
-    'Comp',
-    [new Arg('res', getCompValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: compFetchers() }
-  ),
-  new Fetcher<{ res: Value }, Value>(
-    `
-      #### Governor
-
-      * "Governor ...governorArgs" - Returns Governor value
-    `,
-    'Governor',
-    [new Arg('res', getGovernorValue, { variadic: true })],
-    async (world, { res }) => res,
-    { subExpressions: governorFetchers() }
-  ),
 ];
 
 let contractFetchers = [
   { contract: "Counter", implicit: false },
-  { contract: "CompoundLens", implicit: false },
+  { contract: "SashimiLendingLens", implicit: false },
   { contract: "Reservoir", implicit: true }
 ];
 

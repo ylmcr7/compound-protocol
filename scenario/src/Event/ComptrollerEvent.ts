@@ -3,7 +3,7 @@ import {addAction, describeUser, World} from '../World';
 import {decodeCall, getPastEvents} from '../Contract';
 import {Comptroller} from '../Contract/Comptroller';
 import {ComptrollerImpl} from '../Contract/ComptrollerImpl';
-import {CToken} from '../Contract/CToken';
+import {SLToken} from '../Contract/SLToken';
 import {invoke} from '../Invokation';
 import {
   getAddressV,
@@ -27,7 +27,7 @@ import {buildComptrollerImpl} from '../Builder/ComptrollerImplBuilder';
 import {ComptrollerErrorReporter} from '../ErrorReporter';
 import {getComptroller, getComptrollerImpl} from '../ContractLookup';
 import {getLiquidity} from '../Value/ComptrollerValue';
-import {getCTokenV} from '../Value/CTokenValue';
+import {getSLTokenV} from '../Value/SLTokenValue';
 import {encodedNumber} from '../Encoding';
 import {encodeABI, rawValues} from "../Utils";
 
@@ -88,30 +88,30 @@ async function setLiquidationIncentive(world: World, from: string, comptroller: 
   return world;
 }
 
-async function supportMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
+async function supportMarket(world: World, from: string, comptroller: Comptroller, slToken: SLToken): Promise<World> {
   if (world.dryRun) {
     // Skip this specifically on dry runs since it's likely to crash due to a number of reasons
-    world.printer.printLine(`Dry run: Supporting market  \`${cToken._address}\``);
+    world.printer.printLine(`Dry run: Supporting market  \`${slToken._address}\``);
     return world;
   }
 
-  let invokation = await invoke(world, comptroller.methods._supportMarket(cToken._address), from, ComptrollerErrorReporter);
+  let invokation = await invoke(world, comptroller.methods._supportMarket(slToken._address), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Supported market ${cToken.name}`,
+    `Supported market ${slToken.name}`,
     invokation
   );
 
   return world;
 }
 
-async function unlistMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods.unlist(cToken._address), from, ComptrollerErrorReporter);
+async function unlistMarket(world: World, from: string, comptroller: Comptroller, slToken: SLToken): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods.unlist(slToken._address), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Unlisted market ${cToken.name}`,
+    `Unlisted market ${slToken.name}`,
     invokation
   );
 
@@ -154,12 +154,12 @@ async function setPriceOracle(world: World, from: string, comptroller: Comptroll
   return world;
 }
 
-async function setCollateralFactor(world: World, from: string, comptroller: Comptroller, cToken: CToken, collateralFactor: NumberV): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCollateralFactor(cToken._address, collateralFactor.encode()), from, ComptrollerErrorReporter);
+async function setCollateralFactor(world: World, from: string, comptroller: Comptroller, slToken: SLToken, collateralFactor: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setCollateralFactor(slToken._address, collateralFactor.encode()), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Set collateral factor for ${cToken.name} to ${collateralFactor.show()}`,
+    `Set collateral factor for ${slToken.name} to ${collateralFactor.show()}`,
     invokation
   );
 
@@ -200,60 +200,60 @@ async function sendAny(world: World, from:string, comptroller: Comptroller, sign
   return world;
 }
 
-async function addCompMarkets(world: World, from: string, comptroller: Comptroller, cTokens: CToken[]): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._addCompMarkets(cTokens.map(c => c._address)), from, ComptrollerErrorReporter);
+async function addSashimiMarkets(world: World, from: string, comptroller: Comptroller, slTokens: SLToken[]): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._addSashimiMarkets(slTokens.map(c => c._address)), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Added COMP markets ${cTokens.map(c => c.name)}`,
+    `Added SASHIMI markets ${slTokens.map(c => c.name)}`,
     invokation
   );
 
   return world;
 }
 
-async function dropCompMarket(world: World, from: string, comptroller: Comptroller, cToken: CToken): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._dropCompMarket(cToken._address), from, ComptrollerErrorReporter);
+async function dropSashimiMarket(world: World, from: string, comptroller: Comptroller, slToken: SLToken): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._dropSashimiMarket(slToken._address), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Drop COMP market ${cToken.name}`,
+    `Drop SASHIMI market ${slToken.name}`,
     invokation
   );
 
   return world;
 }
 
-async function refreshCompSpeeds(world: World, from: string, comptroller: Comptroller): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods.refreshCompSpeeds(), from, ComptrollerErrorReporter);
+async function refreshSashimiSpeeds(world: World, from: string, comptroller: Comptroller): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods.refreshSashimiSpeeds(), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Refreshed COMP speeds`,
+    `Refreshed SASHIMI speeds`,
     invokation
   );
 
   return world;
 }
 
-async function claimComp(world: World, from: string, comptroller: Comptroller, holder: string): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods.claimComp(holder), from, ComptrollerErrorReporter);
+async function claimSashimi(world: World, from: string, comptroller: Comptroller, holder: string): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods.claimSashimi(holder), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Comp claimed by ${holder}`,
+    `Sashimi claimed by ${holder}`,
     invokation
   );
 
   return world;
 }
 
-async function setCompRate(world: World, from: string, comptroller: Comptroller, rate: NumberV): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setCompRate(rate.encode()), from, ComptrollerErrorReporter);
+async function setSashimiRate(world: World, from: string, comptroller: Comptroller, rate: NumberV): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setSashimiRate(rate.encode()), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Comp rate set to ${rate.show()}`,
+    `Sashimi rate set to ${rate.show()}`,
     invokation
   );
 
@@ -337,7 +337,7 @@ async function setGuardianPaused(world: World, from: string, comptroller: Comptr
   return world;
 }
 
-async function setGuardianMarketPaused(world: World, from: string, comptroller: Comptroller, cToken: CToken, action: string, state: boolean): Promise<World> {
+async function setGuardianMarketPaused(world: World, from: string, comptroller: Comptroller, slToken: SLToken, action: string, state: boolean): Promise<World> {
   let fun;
   switch(action){
     case "Mint":
@@ -347,7 +347,7 @@ async function setGuardianMarketPaused(world: World, from: string, comptroller: 
       fun = comptroller.methods._setBorrowPaused
       break;
   }
-  let invokation = await invoke(world, fun(cToken._address, state), from, ComptrollerErrorReporter);
+  let invokation = await invoke(world, fun(slToken._address, state), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
@@ -358,12 +358,12 @@ async function setGuardianMarketPaused(world: World, from: string, comptroller: 
   return world;
 }
 
-async function setMarketBorrowCaps(world: World, from: string, comptroller: Comptroller, cTokens: CToken[], borrowCaps: NumberV[]): Promise<World> {
-  let invokation = await invoke(world, comptroller.methods._setMarketBorrowCaps(cTokens.map(c => c._address), borrowCaps.map(c => c.encode())), from, ComptrollerErrorReporter);
+async function setMarketBorrowCaps(world: World, from: string, comptroller: Comptroller, slTokens: SLToken[], borrowCaps: NumberV[]): Promise<World> {
+  let invokation = await invoke(world, comptroller.methods._setMarketBorrowCaps(slTokens.map(c => c._address), borrowCaps.map(c => c.encode())), from, ComptrollerErrorReporter);
 
   world = addAction(
     world,
-    `Borrow caps on ${cTokens} set to ${borrowCaps}`,
+    `Borrow caps on ${slTokens} set to ${borrowCaps}`,
     invokation
   );
 
@@ -397,7 +397,7 @@ export function comptrollerCommands() {
     new Command<{comptroller: Comptroller, action: StringV, isPaused: BoolV}>(`
         #### SetPaused
 
-        * "Comptroller SetPaused <Action> <Bool>" - Pauses or unpaused given cToken function
+        * "Comptroller SetPaused <Action> <Bool>" - Pauses or unpaused given slToken function
           * E.g. "Comptroller SetPaused "Mint" True"
       `,
       "SetPaused",
@@ -408,57 +408,57 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, action, isPaused}) => setPaused(world, from, comptroller, action.val, isPaused.val)
     ),
-    new Command<{comptroller: Comptroller, cToken: CToken}>(`
+    new Command<{comptroller: Comptroller, slToken: SLToken}>(`
         #### SupportMarket
 
-        * "Comptroller SupportMarket <CToken>" - Adds support in the Comptroller for the given cToken
-          * E.g. "Comptroller SupportMarket cZRX"
+        * "Comptroller SupportMarket <SLToken>" - Adds support in the Comptroller for the given slToken
+          * E.g. "Comptroller SupportMarket slZRX"
       `,
       "SupportMarket",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV)
+        new Arg("slToken", getSLTokenV)
       ],
-      (world, from, {comptroller, cToken}) => supportMarket(world, from, comptroller, cToken)
+      (world, from, {comptroller, slToken}) => supportMarket(world, from, comptroller, slToken)
     ),
-    new Command<{comptroller: Comptroller, cToken: CToken}>(`
+    new Command<{comptroller: Comptroller, slToken: SLToken}>(`
         #### UnList
 
-        * "Comptroller UnList <CToken>" - Mock unlists a given market in tests
-          * E.g. "Comptroller UnList cZRX"
+        * "Comptroller UnList <SLToken>" - Mock unlists a given market in tests
+          * E.g. "Comptroller UnList slZRX"
       `,
       "UnList",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV)
+        new Arg("slToken", getSLTokenV)
       ],
-      (world, from, {comptroller, cToken}) => unlistMarket(world, from, comptroller, cToken)
+      (world, from, {comptroller, slToken}) => unlistMarket(world, from, comptroller, slToken)
     ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[]}>(`
+    new Command<{comptroller: Comptroller, slTokens: SLToken[]}>(`
         #### EnterMarkets
 
-        * "Comptroller EnterMarkets (<CToken> ...)" - User enters the given markets
-          * E.g. "Comptroller EnterMarkets (cZRX cETH)"
+        * "Comptroller EnterMarkets (<SLToken> ...)" - User enters the given markets
+          * E.g. "Comptroller EnterMarkets (slZRX slETH)"
       `,
       "EnterMarkets",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true})
+        new Arg("slTokens", getSLTokenV, {mapped: true})
       ],
-      (world, from, {comptroller, cTokens}) => enterMarkets(world, from, comptroller, cTokens.map((c) => c._address))
+      (world, from, {comptroller, slTokens}) => enterMarkets(world, from, comptroller, slTokens.map((c) => c._address))
     ),
-    new Command<{comptroller: Comptroller, cToken: CToken}>(`
+    new Command<{comptroller: Comptroller, slToken: SLToken}>(`
         #### ExitMarket
 
-        * "Comptroller ExitMarket <CToken>" - User exits the given markets
-          * E.g. "Comptroller ExitMarket cZRX"
+        * "Comptroller ExitMarket <SLToken>" - User exits the given markets
+          * E.g. "Comptroller ExitMarket slZRX"
       `,
       "ExitMarket",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV)
+        new Arg("slToken", getSLTokenV)
       ],
-      (world, from, {comptroller, cToken}) => exitMarket(world, from, comptroller, cToken._address)
+      (world, from, {comptroller, slToken}) => exitMarket(world, from, comptroller, slToken._address)
     ),
     new Command<{comptroller: Comptroller, maxAssets: NumberV}>(`
         #### SetMaxAssets
@@ -499,19 +499,19 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, priceOracle}) => setPriceOracle(world, from, comptroller, priceOracle.val)
     ),
-    new Command<{comptroller: Comptroller, cToken: CToken, collateralFactor: NumberV}>(`
+    new Command<{comptroller: Comptroller, slToken: SLToken, collateralFactor: NumberV}>(`
         #### SetCollateralFactor
 
-        * "Comptroller SetCollateralFactor <CToken> <Number>" - Sets the collateral factor for given cToken to number
-          * E.g. "Comptroller SetCollateralFactor cZRX 0.1"
+        * "Comptroller SetCollateralFactor <SLToken> <Number>" - Sets the collateral factor for given slToken to number
+          * E.g. "Comptroller SetCollateralFactor slZRX 0.1"
       `,
       "SetCollateralFactor",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV),
+        new Arg("slToken", getSLTokenV),
         new Arg("collateralFactor", getExpNumberV)
       ],
-      (world, from, {comptroller, cToken, collateralFactor}) => setCollateralFactor(world, from, comptroller, cToken, collateralFactor)
+      (world, from, {comptroller, slToken, collateralFactor}) => setCollateralFactor(world, from, comptroller, slToken, collateralFactor)
     ),
     new Command<{comptroller: Comptroller, closeFactor: NumberV}>(`
         #### SetCloseFactor
@@ -568,7 +568,7 @@ export function comptrollerCommands() {
     new Command<{comptroller: Comptroller, action: StringV, isPaused: BoolV}>(`
         #### SetGuardianPaused
 
-        * "Comptroller SetGuardianPaused <Action> <Bool>" - Pauses or unpaused given cToken function
+        * "Comptroller SetGuardianPaused <Action> <Bool>" - Pauses or unpaused given slToken function
         * E.g. "Comptroller SetGuardianPaused "Transfer" True"
         `,
         "SetGuardianPaused",
@@ -580,26 +580,26 @@ export function comptrollerCommands() {
         (world, from, {comptroller, action, isPaused}) => setGuardianPaused(world, from, comptroller, action.val, isPaused.val)
     ),
 
-    new Command<{comptroller: Comptroller, cToken: CToken, action: StringV, isPaused: BoolV}>(`
+    new Command<{comptroller: Comptroller, slToken: SLToken, action: StringV, isPaused: BoolV}>(`
         #### SetGuardianMarketPaused
 
-        * "Comptroller SetGuardianMarketPaused <CToken> <Action> <Bool>" - Pauses or unpaused given cToken function
-        * E.g. "Comptroller SetGuardianMarketPaused cREP "Mint" True"
+        * "Comptroller SetGuardianMarketPaused <SLToken> <Action> <Bool>" - Pauses or unpaused given slToken function
+        * E.g. "Comptroller SetGuardianMarketPaused slREP "Mint" True"
         `,
         "SetGuardianMarketPaused",
         [
           new Arg("comptroller", getComptroller, {implicit: true}),
-          new Arg("cToken", getCTokenV),
+          new Arg("slToken", getSLTokenV),
           new Arg("action", getStringV),
           new Arg("isPaused", getBoolV)
         ],
-        (world, from, {comptroller, cToken, action, isPaused}) => setGuardianMarketPaused(world, from, comptroller, cToken, action.val, isPaused.val)
+        (world, from, {comptroller, slToken, action, isPaused}) => setGuardianMarketPaused(world, from, comptroller, slToken, action.val, isPaused.val)
     ),
 
     new Command<{comptroller: Comptroller, blocks: NumberV, _keyword: StringV}>(`
         #### FastForward
 
-        * "FastForward n:<Number> Blocks" - Moves the block number forward "n" blocks. Note: in "CTokenScenario" and "ComptrollerScenario" the current block number is mocked (starting at 100000). This is the only way for the protocol to see a higher block number (for accruing interest).
+        * "FastForward n:<Number> Blocks" - Moves the block number forward "n" blocks. Note: in "SLTokenScenario" and "ComptrollerScenario" the current block number is mocked (starting at 100000). This is the only way for the protocol to see a higher block number (for accruing interest).
           * E.g. "Comptroller FastForward 5 Blocks" - Move block number forward 5 blocks.
       `,
       "FastForward",
@@ -638,7 +638,7 @@ export function comptrollerCommands() {
     new Command<{comptroller: Comptroller, signature: StringV, callArgs: StringV[]}>(`
       #### Send
       * Comptroller Send functionSignature:<String> callArgs[] - Sends any transaction to comptroller
-      * E.g: Comptroller Send "setCompAddress(address)" (Address COMP)
+      * E.g: Comptroller Send "setSashimiAddress(address)" (Address SASHIMI)
       `,
       "Send",
       [
@@ -648,84 +648,84 @@ export function comptrollerCommands() {
       ],
       (world, from, {comptroller, signature, callArgs}) => sendAny(world, from, comptroller, signature.val, rawValues(callArgs))
     ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[]}>(`
-      #### AddCompMarkets
+    new Command<{comptroller: Comptroller, slTokens: SLToken[]}>(`
+      #### AddSashimiMarkets
 
-      * "Comptroller AddCompMarkets (<Address> ...)" - Makes a market COMP-enabled
-      * E.g. "Comptroller AddCompMarkets (cZRX cBAT)
+      * "Comptroller AddSashimiMarkets (<Address> ...)" - Makes a market SASHIMI-enabled
+      * E.g. "Comptroller AddSashimiMarkets (slZRX cBAT)
       `,
-      "AddCompMarkets",
+      "AddSashimiMarkets",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true})
+        new Arg("slTokens", getSLTokenV, {mapped: true})
       ],
-      (world, from, {comptroller, cTokens}) => addCompMarkets(world, from, comptroller, cTokens)
+      (world, from, {comptroller, slTokens}) => addSashimiMarkets(world, from, comptroller, slTokens)
      ),
-    new Command<{comptroller: Comptroller, cToken: CToken}>(`
-      #### DropCompMarket
+    new Command<{comptroller: Comptroller, slToken: SLToken}>(`
+      #### DropSashimiMarket
 
-      * "Comptroller DropCompMarket <Address>" - Makes a market COMP
-      * E.g. "Comptroller DropCompMarket cZRX
+      * "Comptroller DropSashimiMarket <Address>" - Makes a market SASHIMI
+      * E.g. "Comptroller DropSashimiMarket slZRX
       `,
-      "DropCompMarket",
+      "DropSashimiMarket",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cToken", getCTokenV)
+        new Arg("slToken", getSLTokenV)
       ],
-      (world, from, {comptroller, cToken}) => dropCompMarket(world, from, comptroller, cToken)
+      (world, from, {comptroller, slToken}) => dropSashimiMarket(world, from, comptroller, slToken)
      ),
 
     new Command<{comptroller: Comptroller}>(`
-      #### RefreshCompSpeeds
+      #### RefreshSashimiSpeeds
 
-      * "Comptroller RefreshCompSpeeds" - Recalculates all the COMP market speeds
-      * E.g. "Comptroller RefreshCompSpeeds
+      * "Comptroller RefreshSashimiSpeeds" - Recalculates all the SASHIMI market speeds
+      * E.g. "Comptroller RefreshSashimiSpeeds
       `,
-      "RefreshCompSpeeds",
+      "RefreshSashimiSpeeds",
       [
         new Arg("comptroller", getComptroller, {implicit: true})
       ],
-      (world, from, {comptroller}) => refreshCompSpeeds(world, from, comptroller)
+      (world, from, {comptroller}) => refreshSashimiSpeeds(world, from, comptroller)
     ),
     new Command<{comptroller: Comptroller, holder: AddressV}>(`
-      #### ClaimComp
+      #### ClaimSashimi
 
-      * "Comptroller ClaimComp <holder>" - Claims comp
-      * E.g. "Comptroller ClaimComp Geoff
+      * "Comptroller ClaimSashimi <holder>" - Claims sashimi
+      * E.g. "Comptroller ClaimSashimi Geoff
       `,
-      "ClaimComp",
+      "ClaimSashimi",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
         new Arg("holder", getAddressV)
       ],
-      (world, from, {comptroller, holder}) => claimComp(world, from, comptroller, holder.val)
+      (world, from, {comptroller, holder}) => claimSashimi(world, from, comptroller, holder.val)
     ),
     new Command<{comptroller: Comptroller, rate: NumberV}>(`
-      #### SetCompRate
+      #### SetSashimiRate
 
-      * "Comptroller SetCompRate <rate>" - Sets COMP rate
-      * E.g. "Comptroller SetCompRate 1e18
+      * "Comptroller SetSashimiRate <rate>" - Sets SASHIMI rate
+      * E.g. "Comptroller SetSashimiRate 1e18
       `,
-      "SetCompRate",
+      "SetSashimiRate",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
         new Arg("rate", getNumberV)
       ],
-      (world, from, {comptroller, rate}) => setCompRate(world, from, comptroller, rate)
+      (world, from, {comptroller, rate}) => setSashimiRate(world, from, comptroller, rate)
     ),
-    new Command<{comptroller: Comptroller, cTokens: CToken[], borrowCaps: NumberV[]}>(`
+    new Command<{comptroller: Comptroller, slTokens: SLToken[], borrowCaps: NumberV[]}>(`
       #### SetMarketBorrowCaps
 
-      * "Comptroller SetMarketBorrowCaps (<CToken> ...) (<borrowCap> ...)" - Sets Market Borrow Caps
-      * E.g "Comptroller SetMarketBorrowCaps (cZRX cUSDC) (10000.0e18, 1000.0e6)
+      * "Comptroller SetMarketBorrowCaps (<SLToken> ...) (<borrowCap> ...)" - Sets Market Borrow Caps
+      * E.g "Comptroller SetMarketBorrowCaps (slZRX slUSDC) (10000.0e18, 1000.0e6)
       `,
       "SetMarketBorrowCaps",
       [
         new Arg("comptroller", getComptroller, {implicit: true}),
-        new Arg("cTokens", getCTokenV, {mapped: true}),
+        new Arg("slTokens", getSLTokenV, {mapped: true}),
         new Arg("borrowCaps", getNumberV, {mapped: true})
       ],
-      (world, from, {comptroller,cTokens,borrowCaps}) => setMarketBorrowCaps(world, from, comptroller, cTokens, borrowCaps)
+      (world, from, {comptroller,slTokens,borrowCaps}) => setMarketBorrowCaps(world, from, comptroller, slTokens, borrowCaps)
     ),
     new Command<{comptroller: Comptroller, newBorrowCapGuardian: AddressV}>(`
         #### SetBorrowCapGuardian

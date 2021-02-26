@@ -2,7 +2,7 @@ const {
   makeInterestRateModel,
   getBorrowRate,
   getSupplyRate
-} = require('../Utils/Compound');
+} = require('../Utils/SashimiLending');
 
 function utilizationRate(cash, borrows, reserves) {
   return borrows ? borrows / (cash + borrows - reserves) : 0;
