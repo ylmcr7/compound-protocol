@@ -1,17 +1,33 @@
 const Comptroller = artifacts.require("Comptroller");
 const Unitroller = artifacts.require("Unitroller");
 const fs = require('fs');
-const directory = './deploy/data';
-module.exports = function (deployer) {
-    deployer.deploy(Comptroller, { gas: 6000000 }).then(function () {
-        fs.writeFileSync(directory + `/contractAddress.txt`, 'Comptroller:' + Comptroller.address, 'utf8');
-        console.log("Comptroller address is saved in", `contractAddress.txt`);
-    })
+const writeAddress = require('../deploy/script/writeAddress');
 
-    deployer.deploy(Unitroller, { gas: 6000000 }).then(function () {
+module.exports = async function (deployer) {
 
-        fs.appendFileSync(directory + `/contractAddress.txt`, '\nUnitroller:' + Unitroller.address, 'utf8');
+    deployer.deploy(Comptroller, { gas: 6000000 });
+    deployer.deploy(Unitroller, { gas: 6000000 });
 
-        console.log("Unitroller address is saved in", `contractAddress.txt`);
-    })
+    deployer.then(function () {
+        return Comptroller.deployed();
+    }).then(function (instance) {
+        a = instance;
+        return Unitroller.deployed();
+    }).then(async function (instance) {
+        b = instance;
+
+        data = fs.readFileSync('./deploy/config/Comptroller.json');
+        let config = JSON.parse(data).config;
+
+        await b._setPendingImplementation(a.address);
+        await a._become(b.address);
+        c = await Comptroller.at(b.address);
+        await c._setCloseFactor(config["newCloseFactorMantissa"]);
+        await c._setSashimiRate(config["sashimiRate_"]);
+        await c._setLiquidationIncentive(config["newLiquidationIncentiveMantissa"]);
+        await c._setMaxAssets(config["newMaxAssets"]);
+
+        writeAddress("Comptroller", a.address);
+        writeAddress("Unitroller", b.address);
+    });
 }

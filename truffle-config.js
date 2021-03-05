@@ -35,8 +35,19 @@ module.exports = {
       network_id: 97,
       gas: 3012388,
       gasPrice: 30000000000
+    },
+    hecoTestnet: {
+      provider: new HDWalletProvider(keys, "https://http-testnet.hecochain.com", 0, 4),
+      network_id: 256,
+      gas: 3012388,
+      gasPrice: 1000000000
+    },
+    hecochain: {
+      provider: new HDWalletProvider(keys, "https://http-mainnet.hecochain.com", 0, 4),
+      network_id: 128,
+      gas: 3012388,
+      gasPrice: 10000000000
     }
-
   },
 
   compilers: {
@@ -55,6 +66,6 @@ module.exports = {
     'truffle-plugin-verify'
   ],
   api_keys: {
-    etherscan: process.env.BSCSCAN_API_KEY
+    etherscan: process.env.HECO_API_KEY
   }
 };

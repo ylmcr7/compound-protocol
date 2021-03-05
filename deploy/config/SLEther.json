@@ -1,0 +1,13 @@
+{
+    "name": "SLEther",
+    "config": {
+        "WhitePaperInterestRateModel": "JumpRateModelV21",
+        "INITIALEXCHANGERATEMANTISSA_": "201651901844513861760148860",
+        "NAME_": "slHT",
+        "SYMBOL_": "slHT",
+        "DECIMALS_": 8,
+        "ADMIN_": "0x2E7c4EfdFA6680e34988dcBD70F6a31b4CC28219",
+        "newReserveFactorMantissa": "200000000000000000",
+        "newCollateralFactorMantissa": "600000000000000000"
+    }
+}

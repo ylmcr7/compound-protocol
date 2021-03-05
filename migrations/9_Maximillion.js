@@ -1,11 +1,9 @@
 const Maximillion = artifacts.require("Maximillion");
 const SLEther = artifacts.require("SLEther");
-const fs = require('fs');
-const directory = './deploy/data';
-slBNB = SLEther.address;
+const writeAddress = require('../deploy/script/writeAddress');
+
 module.exports = function (deployer) {
-    deployer.deploy(Maximillion, slBNB, { gas: 6000000 }).then(function () {
-        fs.appendFileSync(directory + `/contractAddress.txt`, '\nMaximillion:' + Maximillion.address, 'utf8');
-        console.log("Maximillion address is saved in", `contractAddress.txt`);
+    deployer.deploy(Maximillion, SLEther.address, { gas: 6000000 }).then(function () {
+        writeAddress("Maximillion", Maximillion.address);
     });
 }
